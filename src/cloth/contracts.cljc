@@ -10,9 +10,9 @@
 
 #?(:clj
    (defn compile-solidity [file]
-     (json/parse-string (:out (sh "solc" "--combined-json" "abi,bin" file)) true))
+     (json/parse-string (:out (sh "solc" "--combined-json" "abi,bin" file)) true)))
 
-   )
+
 
 #?(:clj
    (defn abi->args [f]
@@ -48,6 +48,6 @@
                 `(defn ~(symbol (c/dasherize (:name f))) [contract & args]
                    (cloth.chain/call (cloth.tx/fn-tx contract ~f args)))
                 `(defn ~(symbol (str (c/dasherize (:name f)) "!")) [contract & args]
-                   (cloth.core/sign-and-send! (cloth.tx/fn-tx contract ~f args)))))))
+                   (cloth.core/sign-and-send! (cloth.tx/fn-tx contract ~f args)))))))))
 
-     ))
+

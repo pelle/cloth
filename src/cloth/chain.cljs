@@ -7,7 +7,7 @@
 
 
 (def ethereum-rpc "http://localhost:8545")
-(def ethrpc (partial net/rpc ethereum-rpc ))
+(def ethrpc (partial net/rpc ethereum-rpc))
 
 (defn client-version []
   (ethrpc "web3_clientVersion"))
@@ -34,7 +34,7 @@
 
 (defn get-block-by-hash
   ([hash]
-    (get-block-by-hash hash false))
+   (get-block-by-hash hash false))
   ([hash full-transactions?]
    (ethrpc "eth_getBlockByHash" hash full-transactions?)))
 

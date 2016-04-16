@@ -1,5 +1,6 @@
 (ns cloth.keys
-  (:require [cloth.util :as util]))
+  (:require ethereumjs-tx
+            [cloth.util :as util]))
 
 (def secp256k1 (aget util/eth-util "secp256k1"))
 
@@ -8,10 +9,15 @@
   ([length]
    (util/Buffer. (. js/window.crypto getRandomValues (js/Uint8Array. length)))))
 
+(defn verify-private-key [key]
+  (try
+    ((aget secp256k1 "secretKeyVerify") key)
+    (catch js/TypeError e nil)))
+
 (defn create-private-key []
   (loop []
     (let [key (random-bytes)]
-      (if-not ((aget secp256k1 "privateKeyVerify") key)
+      (if-not (verify-private-key key)
         (recur)
         key))))
 

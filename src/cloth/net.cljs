@@ -45,7 +45,7 @@
   ;; ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "GET", "POST"]'
   ;; ipfs config --json API.HTTPHeaders.Access-Control-Allow-Credentials '["true"]'
   ;; ipfs daemon
-      (p/then (ipfs-get "Qmf9qwT8eNeLGk41RfLfJJ7q8W891QkqDwVWV7aiqoVBxr")
-               #(println "response: " (prn-str %)))
+  (p/then (ipfs-get "Qmf9qwT8eNeLGk41RfLfJJ7q8W891QkqDwVWV7aiqoVBxr"
+                    #(println "response: " (prn-str %)))))
 
-  )
+

@@ -1,9 +1,10 @@
 (ns cloth.tx
   (:require [cloth.util :as util]
             [cloth.keys :as keys]
-            [cuerdas.core :as c]))
+            [cuerdas.core :as c]
+            ethereumjs-tx))
 
-(def Tx  js/EthTx)
+(def Tx js/EthTx)
 
 (defn map->tx [params]
   (reduce #(assoc % (c/camelize (name (key %2)))
@@ -45,17 +46,17 @@
          args (if (map? (last args)) (pop args) args)]
      (fn-tx contract (:name fn-abi) (map :type (:inputs fn-abi)) args params)))
   ([contract name types args params]
-    (-> params
-        (assoc :data (encode-fn-sig name types args)
-               :to   contract)
-        (map->tx))))
+   (-> params
+       (assoc :data (encode-fn-sig name types args)
+              :to contract)
+       (map->tx))))
 
 (defn create-contract-tx
   [bin params]
   (-> params
-      (assoc :data bin
-             ;:to (util/add0x (util/->hex (util/zero-pad (util/int->buffer 0) 40)))
-             )
+      (assoc :data bin)
+      ;:to (util/add0x (util/->hex (util/zero-pad (util/int->buffer 0) 40)))
+
       (map->tx)))
 
 

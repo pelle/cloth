@@ -5,6 +5,7 @@ pom.xml
 /out/
 /release/
 /target/
+resources/public/js
 .lein-deps-sum
 .lein-repl-history
 .lein-plugins/
@@ -12,3 +13,7 @@ pom.xml
 .idea
 *.iml
 node_modules/
+
+figwheel_server.log
+
+index.html

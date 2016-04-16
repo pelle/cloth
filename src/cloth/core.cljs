@@ -16,7 +16,7 @@
 (defn faucet!
   "Donate some eth from the local rpc coinbase to current account"
   ([amount]
-    (if @keypair
+   (if @keypair
       (faucet! (:address @keypair) amount)))
   ([address amount]
    (p/then (chain/coinbase)
@@ -54,7 +54,7 @@
 
 (defn sign-and-send!
   ([t]
-    (sign-and-send! t @keypair))
+   (sign-and-send! t @keypair))
   ([t kp]
    (p/then (fetch-defaults kp)
            #(-> (merge t %)

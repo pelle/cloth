@@ -93,7 +93,7 @@
   [id]
   (ethrpc "eth_uninstallFilter" id))
 
-;; the following are just for local development until we add signing in the browser
+;; the following are just for local development we add signing in the browser
 (defn send-transaction
   "Only use this for local development not for prod"
   [data]

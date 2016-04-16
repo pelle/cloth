@@ -5,7 +5,7 @@
 
 (defn json-decode
   [response]
-  (p/resolved (update response :body #(js->clj (js/JSON.parse %)))))
+  (p/resolved (update response :body #(js->clj (js/JSON.parse %) :keywordize-keys true))))
 
 (defn json-encode
   [request]
@@ -18,9 +18,9 @@
       payload)))
 
 (defn json-rpc-response [response]
-  (if-let [error (get-in response [:body "error"])]
+  (if-let [error (get-in response [:body :error])]
     (p/rejected error)
-    (p/resolved (get-in response [:body "result"]))))
+    (p/resolved (get-in response [:body :result]))))
 
 (defn rpc [endpoint method & params]
   (-> (http/post endpoint

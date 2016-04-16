@@ -5,6 +5,7 @@
             [cloth.chain :as chain]
             [cloth.util :as util]
             [cloth.keys :as keys]))
+(enable-console-print!)
 
 ;; In a browser we will typically only use one keypair
 (defonce keypair (atom nil))
@@ -12,9 +13,9 @@
 (defn maybe-create-keypair []
   (when-not @keypair
     (reset! keypair (keys/create-keypair))))
-
+()
 (defn faucet!
-  "Donate some eth from the local rpc coinbase to current account"
+  "Donate some eth from the local rpc coinbase to current account. Intended for testing purposes only."
   ([amount]
    (if @keypair
       (faucet! (:address @keypair) amount)))
@@ -23,6 +24,9 @@
            #(chain/send-transaction {:value amount
                                      :from %
                                      :to address}))))
+
+(defn balance []
+  (chain/get-balance (:address @keypair)))
 
 (defn fetch-nonce
   ([]

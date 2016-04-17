@@ -1,6 +1,6 @@
 (defproject cloth "0.1.0-SNAPSHOT"
-  :description "ClojureScript tools for Ethereum"
-  :url "http://example.com/FIXME"
+  :description "Clojure(Script) tools for Ethereum"
+  :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.8.40"]
                  [funcool/cats "1.2.1"]

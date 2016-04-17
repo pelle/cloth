@@ -55,8 +55,7 @@
                                 (util/hex-> b)
                                 b))]
      {:private-key (util/hex0x (priv->b private-key))
-      :address     (->address #?(:cljs public-key)
-                              #?(:clj private-key))})))
+      :address     (->address private-key)})))
 
 (defn get-private-key
   "pass a keypair map or a private-key either hex or buffer and returns a private key for signing pupr"
@@ -66,8 +65,7 @@
             (if (string? kp-or-private-key)
               (util/hex-> kp-or-private-key)
               kp-or-private-key))]
-    #?(:cljs b)
-    #?(:clj (b->priv b))))
+    (b->priv b)))
 
 (defn create-keypair
   "Creates a map of hex encoded keypair with

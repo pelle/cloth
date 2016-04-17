@@ -61,9 +61,10 @@
 (defn hex->
   "Converts a hex string to buffer or bytearray"
   [hex]
-  (-> (strip0x hex)
-      (pad-to-even)
-      (hex->b)))
+  (when hex
+    (-> (strip0x hex)
+        (pad-to-even)
+        (hex->b))))
 
 (defn hex0x [buffer]
   (add0x (->hex buffer)))
@@ -151,7 +152,7 @@
   [b]
   #?(:cljs
      ((aget eth-util "fromSigned") b))
-  #?(:clj (BigInteger. 1 b)))
+  #?(:clj (if b (BigInteger. 1 b) 0)))
 
 (defn bn->b
   "Converts a `BN` or `BigNumber` to an unsigned integer and returns it as a `Buffer` or ByteArray. Assumes 256-bit numbers."
@@ -163,9 +164,10 @@
 (defn int->b
   "Converts an `Number` to a `Buffer`"
   [number]
-  #?(:cljs
-     ((aget eth-util "intToBuffer") number))
-  #?(:clj (bn->b (biginteger number))))
+  (let [number (if (nil? number) 0 number)]
+    #?(:cljs
+       ((aget eth-util "intToBuffer") number))
+    #?(:clj (bn->b (biginteger number)))))
 
 (defn int->hex
   "Converts a `Number` into a hex `String`"

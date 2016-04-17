@@ -62,9 +62,8 @@
   ([t kp]
    (p/then (fetch-defaults kp)
            #(-> (merge t %)
-                (tx/create-tx)
-                (tx/sign-tx kp)
-                (tx/hex)
+                (tx/create-and-sign kp)
+                (tx/->hex)
                 (chain/send-raw-transaction)))))
 
 

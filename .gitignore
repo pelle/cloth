@@ -17,3 +17,5 @@ node_modules/
 figwheel_server.log
 
 index.html
+
+*.log

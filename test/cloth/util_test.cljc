@@ -1,6 +1,7 @@
 (ns cloth.util-test
-  (:require [cljs.test :refer-macros [is are deftest testing use-fixtures]]
-            [cloth.util :as util]))
+  (:require [cloth.util :as util]
+    #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]]
+        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
 
 (deftest test-add0x
   (is (= (util/add0x "ab0c") "0xab0c"))
@@ -23,6 +24,12 @@
   (is (= (util/int->hex 0) "00"))
   (is (= (util/int->hex 65280) "ff00")))
 
-(deftest test-pad
+(deftest test-rpad
   (is (= (util/->hex (util/rpad (util/hex-> "ab") 4)) "ab000000"))
-  (is (= (util/->hex (util/rpad (util/hex-> "ab001010") 4)) "ab001010")))
+  (is (= (util/->hex (util/rpad (util/hex-> "ab001010") 4)) "ab001010"))
+  (is (= (util/->hex (util/rpad (util/hex-> "ab001010") 2)) "1010")))
+
+(deftest test-pad
+  (is (= (util/->hex (util/pad (util/hex-> "ab") 4)) "000000ab"))
+  (is (= (util/->hex (util/pad (util/hex-> "ab001010") 4)) "ab001010"))
+  (is (= (util/->hex (util/pad (util/hex-> "ab001010") 2)) "1010")))

@@ -7,7 +7,8 @@
                  [funcool/promesa "1.1.1"]
                  [funcool/httpurr "0.5.0"]
                  [funcool/cuerdas "0.7.2"]
-                 [org.ethereum/ethereumj-core "1.2.0-RELEASE"]]
+                 [org.ethereum/ethereumj-core "1.2.0-RELEASE"]
+                 [cheshire "5.6.1"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.3"]
@@ -36,7 +37,7 @@
                                       :optimizations :advanced}}}}
   :doo {:build "test"}
   :source-paths ["src" "target/classes"]
-  :clean-targets ["out" "release"]
+  :clean-targets ["out" "release" "target"]
   ;; Home of ethereumj
   :repositories [["oss.jfrog.org" "http://dl.bintray.com/ethereum/maven"]])
 

@@ -29,14 +29,13 @@
            key))))
   #?(:clj (ECKey.)))
 
-(defn ->public-key [private-key]
-  #?(:cljs
-     ((aget util/eth-util "privateToPublic") private-key))
-  #?(:clj (.getPubKey private-key)))
+#?(:cljs
+   (defn ->public-key [private-key]
+     ((aget util/eth-util "privateToPublic") private-key)))
 
-(defn ->address [public-key]
-  #?(:cljs (util/hex0x ((aget util/eth-util "pubToAddress") public-key)))
-  #?(:clj (util/hex0x (.getAddress public-key))))
+(defn ->address [private-key]
+  #?(:cljs (util/hex0x ((aget util/eth-util "pubToAddress") (->public-key private-key))))
+  #?(:clj (util/hex0x (.getAddress private-key))))
 
 (defn priv->b [priv]
   #?(:cljs (identity priv))
@@ -49,31 +48,29 @@
        b
        (ECKey/fromPrivate b))))
 
+
 (defn keypair
   ([b]
    (let [private-key (b->priv (if (string? b)
                                 (util/hex-> b)
-                                b))
-         public-key (->public-key private-key)]
+                                b))]
      {:private-key (util/hex0x (priv->b private-key))
-      :public-key  (util/hex0x public-key)
       :address     (->address #?(:cljs public-key)
                               #?(:clj private-key))})))
 
 (defn get-private-key
-  "pass a keypair map or a private-key either hex or buffer"
+  "pass a keypair map or a private-key either hex or buffer and returns a private key for signing pupr"
   [kp-or-private-key]
-  (let [b
-        (if (:private-key kp-or-private-key)
-          (util/hex-> (:private-key kp-or-private-key))
-          (if (string? kp-or-private-key)
-            (util/hex-> kp-or-private-key)
-            kp-or-private-key))]
+  (let [b (if (:private-key kp-or-private-key)
+            (util/hex-> (:private-key kp-or-private-key))
+            (if (string? kp-or-private-key)
+              (util/hex-> kp-or-private-key)
+              kp-or-private-key))]
     #?(:cljs b)
     #?(:clj (b->priv b))))
 
 (defn create-keypair
   "Creates a map of hex encoded keypair with
-   :private-key, :public-key and :address keys"
+   :private-key and :address keys"
   []
   (keypair (create-private-key)))

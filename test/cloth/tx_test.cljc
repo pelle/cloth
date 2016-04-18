@@ -51,3 +51,7 @@
                    (tx/sign private))]
     (is (= (tx/->hex signed)
            "0xf864018207d08301e0f3942036c6cd85692f0fb2c26e6c6b2eced9e4478dfd8204cf001ca0d8b8f26cf8951c7653137ea028b7a8dea03c75df792ece0c40401081eba24d2ca035d5b02f1372091e7aa1b251a803f6a4513e7dfbf58be22995a0ea61cdee6789"))))
+
+;; TODO write tests for these
+(deftest test-fn-tx)
+(deftest test-contract-tx)

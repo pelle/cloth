@@ -1,15 +1,27 @@
 (ns cloth.net
-  (:require [httpurr.client.xhr :as http]
-            [promesa.core :as p]))
+  (:require
+    #?@(:cljs [[httpurr.client.xhr :as http]])
+    #?@(:clj [[httpurr.client.aleph :as http]
+              [cheshire.core :as json]
+              [byte-streams :as bytes]])
+              [promesa.core :as p]))
 
+
+(defn parse-json [d]
+  #?(:cljs (js->clj (js/JSON.parse d) :keywordize-keys true))
+  #?(:clj (json/parse-string (bytes/to-string d) true)))
+
+(defn to-json [d]
+  #?(:cljs (js/JSON.stringify (clj->js d)))
+  #?(:clj (json/generate-string d)))
 
 (defn json-decode
   [response]
-  (p/resolved (update response :body #(js->clj (js/JSON.parse %) :keywordize-keys true))))
+  (update response :body parse-json))
 
 (defn json-encode
   [request]
-  (update request :body #(js/JSON.stringify (clj->js %))))
+  (update request :body to-json))
 
 (defn json-rpc-payload [method params]
   (let [payload {:method method :id 1 :jsonrpc "2.0"}]
@@ -19,13 +31,14 @@
 
 (defn json-rpc-response [response]
   (if-let [error (get-in response [:body :error])]
-    (p/rejected error)
-    (p/resolved (get-in response [:body :result]))))
+    (throw error)
+    (get-in response [:body :result])))
 
 (defn rpc [endpoint method & params]
   (-> (http/post endpoint
                  (-> {:body (json-rpc-payload method params)}
-                     json-encode))
+                     json-encode
+                     (assoc-in [:headers "Content-Type"] "application/json")))
       (p/then json-decode)
       (p/then json-rpc-response)))
 

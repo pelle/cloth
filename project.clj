@@ -6,6 +6,7 @@
                  [funcool/cats "1.2.1"]
                  [funcool/promesa "1.1.1"]
                  [funcool/httpurr "0.5.0"]
+                 [aleph "0.4.1-beta4" :scope "provided"]
                  [funcool/cuerdas "0.7.2"]
                  [org.ethereum/ethereumj-core "1.2.0-RELEASE"]
                  [cheshire "5.6.1"]]

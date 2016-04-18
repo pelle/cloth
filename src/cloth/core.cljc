@@ -5,7 +5,8 @@
             [cloth.chain :as chain]
             [cloth.util :as util]
             [cloth.keys :as keys]))
-(enable-console-print!)
+
+#?(:cljs (enable-console-print!))
 
 ;; In a browser we will typically only use one keypair
 (defonce keypair (atom nil))
@@ -33,11 +34,11 @@
    (fetch-nonce @keypair))
   ([kp-or-address]
    (p/then (chain/get-transaction-count (:address kp-or-address kp-or-address))
-           (fn [tx-count] (p/promise {:nonce (inc tx-count)})))))
+           (fn [tx-count] {:nonce (inc tx-count)}))))
 
 (defn fetch-gas-price []
   (p/then (chain/gas-price)
-          (fn [price] (p/promise {:gasPrice price}))))
+          (fn [price] {:gasPrice price})))
 
 (defn fetch-defaults
   ([] (fetch-defaults @keypair))

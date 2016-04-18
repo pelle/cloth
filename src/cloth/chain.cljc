@@ -5,8 +5,10 @@
             [cloth.tx :as tx]
             [cloth.util :as util]))
 
+#?(:clj
+   (def clj->js identity))
 
-(def ethereum-rpc "http://localhost:8545")
+(def ethereum-rpc "http://localhost:8545/")
 (def ethrpc (partial net/rpc ethereum-rpc))
 
 (defn client-version []

@@ -19,3 +19,5 @@ figwheel_server.log
 index.html
 
 *.log
+
+.nrepl-port

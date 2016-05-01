@@ -9,7 +9,6 @@
 (def ethereum-rpc "http://localhost:8545/")
 (def ethrpc (partial net/rpc ethereum-rpc))
 
-
 (deftest rpc-test
   #?(:cljs
      (async done

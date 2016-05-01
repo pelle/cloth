@@ -30,8 +30,8 @@
        (let [ba (if (empty? ba)
                   (byte-array 1)
                   ba)]
-         (Hex/toHexString ba))
-       )))
+         (Hex/toHexString ba)))))
+
 
 (defn add0x [input]
   (if (string? input)
@@ -178,7 +178,7 @@
   "Converts a `Buffer` or `bytearray` to a `Number`"
   [b]
   #?(:cljs ((aget eth-util "bufferToInt") b))
-  #?(:clj (int (b->bn b))))
+  #?(:clj (b->bn b)))
 
 (defn hex->int
   "Convers a hex `string` into a number"

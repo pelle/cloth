@@ -46,9 +46,22 @@
   ([num full-transactions?]
    (ethrpc "eth_getBlockByNumber" num full-transactions?)))
 
+(defn rpc->tx [tx]
+  (if tx
+    (-> (select-keys tx [:from :to :hash])
+        (assoc :value (util/hex->int (:value tx))
+               :block-hash (:blockHash tx)
+               :block-number (util/hex->int (:blockNumber tx))
+               :nonce (util/hex->int (:nonce tx))
+               :gas (util/hex->int (:gas tx))
+               :gas-price (util/hex->int (:gasPrice tx))
+               :transaction-index (util/hex->int (:transactionIndex tx))
+               :input (util/hex->int (:input tx))))))
+
 (defn get-transaction-by-hash
   [hash]
-  (ethrpc "eth_getTransactionByHash" hash))
+  (p/then (ethrpc "eth_getTransactionByHash" hash)
+          rpc->tx))
 
 (defn get-transaction-receipt
   [hash]

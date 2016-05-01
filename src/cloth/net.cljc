@@ -1,10 +1,10 @@
 (ns cloth.net
-  (:require
+  (:require [promesa.core :as p]
     #?@(:cljs [[httpurr.client.xhr :as http]])
     #?@(:clj [[httpurr.client.aleph :as http]
               [cheshire.core :as json]
-              [byte-streams :as bytes]])
-              [promesa.core :as p]))
+              [byte-streams :as bytes]])))
+
 
 
 (defn parse-json [d]

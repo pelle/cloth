@@ -1,1 +1,1 @@
-{"cloth.keys-test" ["test-get-private-key" "test-create-keypair" "test-keypair" "test-keypair"], "cloth.util-test" ["test-sha3" "test-int->hex" "test-pad"]}
+{"cloth.core-test" ["balance-test"]}

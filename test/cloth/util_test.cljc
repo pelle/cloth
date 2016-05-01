@@ -15,6 +15,7 @@
   (is (= (util/->hex (util/sha3 "hello")) "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8")))
 
 (deftest test-hex->int
+  (is (= (util/hex->int "0x0") 0))
   (is (= (util/hex->int "0x00") 0))
   (is (= (util/hex->int "0xff00") 65280))
   (is (= (util/hex->int "00") 0))

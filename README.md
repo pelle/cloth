@@ -23,6 +23,33 @@ Basic idea for use int the browser is that you will always have one keypair stor
 
 Instead of callbacks we use [promesa](http://funcool.github.io/promesa/latest/) which allow us to compose functions easily.
 
+## Testing
+
+Most code will work both on clojure and clojurescript. To run tests first install ethereumjs-testrpc:
+
+```
+npm install -g ethereumjs-testrpc
+```
+
+This is a small temporary test ethereum node. Run it:
+
+```
+testrpc
+```
+
+### Clojure tests
+
+Run `lein test` or `lein test-refresh`.
+
+### Clojurescript tests
+
+We use [doo](https://github.com/bensu/doo) 
+
+Install a js environment such as phantomjs
+
+```
+lein doo phantom test
+```
 
 ## License
 

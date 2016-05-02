@@ -1,4 +1,4 @@
-(defproject cloth "0.1.0-SNAPSHOT"
+(defproject cloth "0.1.0"
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.8.0"]

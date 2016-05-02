@@ -4,7 +4,10 @@ Simple ClojureScript (soon Clojure as well) library for interacting with the Eth
 
 This is extremely WIP and really should not be used by anyone yet. API is likely to change alot in particular with regular clojure support.
 
-## Overview
+## Basic usage
+
+
+
 
 Basic idea for use int the browser is that you will always have one keypair stored in the
 

@@ -8,8 +8,8 @@
 #?(:clj
    (def clj->js identity))
 
-(def ethereum-rpc "http://localhost:8545/")
-(def ethrpc (partial net/rpc ethereum-rpc))
+(defonce ethereum-rpc (atom "http://localhost:8545/"))
+(def ethrpc (partial net/rpc (deref ethereum-rpc)))
 
 (defn client-version []
   (ethrpc "web3_clientVersion"))

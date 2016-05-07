@@ -48,6 +48,16 @@
                :transaction-index (util/hex->int (:transactionIndex tx))
                :input (util/hex->int (:input tx))))))
 
+(defn receipt->tx [tx]
+  (if tx
+    {:hash (:transactionHash tx)
+     :transaction-index (util/hex->int (:transactionIndex tx))
+     :block-hash (:blockHash tx)
+     :block-number (util/hex->int (:blockNumber tx))
+     :contract-address (:contractHash tx)
+     :cumulative-gas-used (util/hex->int (:cumulativeGasUsed tx))
+     :gas-used (util/hex->int (:gasUsed tx))
+     :logs (:logs tx)}))
 
 (defn rpc->block [block]
   (if block
@@ -89,7 +99,8 @@
 
 (defn get-transaction-receipt
   [hash]
-  (ethrpc "eth_getTransactionReceipt" hash))
+  (p/then (ethrpc "eth_getTransactionReceipt" hash)
+          receipt->tx))
 
 (defn get-storage-at
   [index block-number]

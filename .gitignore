@@ -21,3 +21,5 @@ index.html
 *.log
 
 .nrepl-port
+
+*.asc

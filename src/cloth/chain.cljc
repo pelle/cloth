@@ -3,7 +3,9 @@
             [cloth.net :as net]
             [cuerdas.core :as c]
             [cloth.tx :as tx]
-            [cloth.util :as util]))
+            [cloth.util :as util]
+    #?@(:cljs [[cljs-time.coerce :as coerce]])
+    #?@(:clj  [[clj-time.coerce :as coerce]])))
 
 #?(:clj
    (def clj->js identity))
@@ -34,18 +36,6 @@
    (-> (ethrpc "eth_getTransactionCount" address block-number)
        (p/then util/hex->int))))
 
-(defn get-block-by-hash
-  ([hash]
-   (get-block-by-hash hash false))
-  ([hash full-transactions?]
-   (ethrpc "eth_getBlockByHash" hash full-transactions?)))
-
-(defn get-block-by-number
-  ([num]
-   (get-block-by-number num false))
-  ([num full-transactions?]
-   (ethrpc "eth_getBlockByNumber" num full-transactions?)))
-
 (defn rpc->tx [tx]
   (if tx
     (-> (select-keys tx [:from :to :hash])
@@ -57,6 +47,40 @@
                :gas-price (util/hex->int (:gasPrice tx))
                :transaction-index (util/hex->int (:transactionIndex tx))
                :input (util/hex->int (:input tx))))))
+
+
+(defn rpc->block [block]
+  (if block
+    (-> (select-keys block [:hash :miner :uncles])
+        (assoc :transactions-root (:transactionsRoot block)
+               :logs-bloom        (:logsBloom block)
+               :state-root        (:stateRoot block)
+               :parent-hash       (:parentHash block)
+               :receipt-root      (:receiptRoot block)
+               :sha3-uncles       (:sha3uncles block)
+               :extra-data        (:extraData block)
+               :transactions      (mapv rpc->tx (:transactions block))
+               :number            (util/hex->int (:number block))
+               :difficulty        (util/hex->int (:difficulty block))
+               :gas-used          (util/hex->int (:gasUsed block))
+               :nonce             (util/hex->int (:nonce block))
+               :gas-limit         (util/hex->int (:gasLimit block))
+               :total-difficulty  (util/hex->int (:totalDifficulty block))
+               :timestamp         (coerce/from-long (* 1000 (long (util/hex->int (:timestamp block)))))))))
+
+(defn get-block-by-hash
+  ([hash]
+   (get-block-by-hash hash false))
+  ([hash full-transactions?]
+   (p/then (ethrpc "eth_getBlockByHash" hash full-transactions?)
+           rpc->block)))
+
+(defn get-block-by-number
+  ([num]
+   (get-block-by-number num false))
+  ([num full-transactions?]
+   (p/then (ethrpc "eth_getBlockByNumber" num full-transactions?)
+           rpc->block)))
 
 (defn get-transaction-by-hash
   [hash]

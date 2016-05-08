@@ -6,7 +6,7 @@ This is extremely WIP and really should not be used by anyone yet. API is likely
 
 Add the following to your project.clj file:
 
-`[cloth "0.2.2"]`
+`[cloth "0.2.3"]`
 
 Note I have not tested any of this in production or using minified clojurescript code.
 

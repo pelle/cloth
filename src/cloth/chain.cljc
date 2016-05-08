@@ -53,7 +53,7 @@
      :transaction-index (util/hex->int (:transactionIndex tx))
      :block-hash (:blockHash tx)
      :block-number (util/hex->int (:blockNumber tx))
-     :contract-address (:contractHash tx)
+     :contract-address (:contractAddress tx)
      :cumulative-gas-used (util/hex->int (:cumulativeGasUsed tx))
      :gas-used (util/hex->int (:gasUsed tx))
      :logs (:logs tx)}))

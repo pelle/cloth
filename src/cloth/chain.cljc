@@ -38,15 +38,14 @@
 
 (defn rpc->tx [tx]
   (if tx
-    (-> (select-keys tx [:from :to :hash])
+    (-> (select-keys tx [:from :to :hash :input])
         (assoc :value (util/hex->int (:value tx))
                :block-hash (:blockHash tx)
                :block-number (util/hex->int (:blockNumber tx))
                :nonce (util/hex->int (:nonce tx))
                :gas (util/hex->int (:gas tx))
                :gas-price (util/hex->int (:gasPrice tx))
-               :transaction-index (util/hex->int (:transactionIndex tx))
-               :input (util/hex->int (:input tx))))))
+               :transaction-index (util/hex->int (:transactionIndex tx))))))
 
 (defn receipt->tx [tx]
   (if tx

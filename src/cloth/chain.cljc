@@ -11,7 +11,8 @@
    (def clj->js identity))
 
 (defonce ethereum-rpc (atom "http://localhost:8545/"))
-(def ethrpc (partial net/rpc (deref ethereum-rpc)))
+(defn ethrpc [& args]
+  (apply net/rpc @ethereum-rpc args))
 
 (defn client-version []
   (ethrpc "web3_clientVersion"))
@@ -94,6 +95,11 @@
 (defn get-transaction-by-hash
   [hash]
   (p/then (ethrpc "eth_getTransactionByHash" hash)
+          rpc->tx))
+
+(defn get-transaction-by-block-number-and-index
+  [block-number index]
+  (p/then (ethrpc "eth_getTransactionByBlockNumberAndIndex" block-number index)
           rpc->tx))
 
 (defn get-transaction-receipt

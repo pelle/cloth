@@ -1,8 +1,8 @@
-(defproject cloth "0.2.4"
+(defproject cloth "0.2.5-SNAPSHOT"
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.8.40"]
+                 [org.clojure/clojurescript "1.8.51"]
                  [funcool/cats "1.2.1"]
                  [funcool/promesa "1.1.1"]
                  [funcool/httpurr "0.6.0"]

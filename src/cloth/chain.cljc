@@ -108,8 +108,10 @@
           receipt->tx))
 
 (defn get-storage-at
-  [index block-number]
-  (ethrpc "eth_getStorageAt" index block-number))
+  ([address index]
+    (get-storage-at address index "latest"))
+  ([address index block-number]
+   (ethrpc "eth_getStorageAt" address (util/add0x (util/int->hex index)) block-number)))
 
 (defn get-code
   [address block-number]

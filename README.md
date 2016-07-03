@@ -16,7 +16,7 @@ The `cloth.core` namespace has most of what you need for regular use for sending
 
 ```clojure
 (require '[cloth.core :as cloth])
-(require '[promes.core :as p]) // promise library
+(require '[promesa.core :as p]) ;; promise library
 ```
 
 ### Check the balance of the current account:

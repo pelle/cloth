@@ -17,6 +17,7 @@
                  ;[cljsjs/bignumber "2.1.4-1"]
 
                  [cheshire "5.6.3"]]
+                 [funcool/octet "0.2.0"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.3"]

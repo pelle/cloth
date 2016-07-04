@@ -103,9 +103,10 @@
           rpc->tx))
 
 (defn get-transaction-receipt
-  [hash]
-  (p/then (ethrpc "eth_getTransactionReceipt" hash)
-          receipt->tx))
+  [tx-or-hash]
+  (let [hash (:hash tx-or-hash tx-or-hash)]
+    (p/then (ethrpc "eth_getTransactionReceipt" hash)
+            receipt->tx)))
 
 (defn get-storage-at
   ([address index]

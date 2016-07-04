@@ -31,7 +31,7 @@
 
 (defn json-rpc-response [response]
   (if-let [error (get-in response [:body :error])]
-    (throw error)
+    (ex-info "json-rpc-error" error)
     (get-in response [:body :result])))
 
 (defn rpc [endpoint method & params]

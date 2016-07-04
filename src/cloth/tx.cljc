@@ -10,7 +10,7 @@
 
 
 (defn map->tx [params]
-  (reduce #(assoc % (c/camelize (name (key %2)))
+  (reduce #(assoc % (keyword (c/camelize (name (key %2))))
                     (util/add0x (val %2)))
           {} params))
 
@@ -109,7 +109,7 @@
   (-> (str (name fname) "(" (c/join "," (map name types)) ")")
       (util/sha3)
       (util/->hex)
-      (.slice 0 8)))
+      (c/slice 0 8)))
 
 (defn encode-args [types args]
   (apply str (map util/solidity-format types args)))
@@ -127,14 +127,13 @@
    (-> params
        (assoc :data (encode-fn-sig name types args)
               :to contract)
-       (map->tx)
-       (create))))
+       (map->tx))))
 
 (defn create-contract-tx
   [bin params]
   (-> params
       (assoc :data bin)
-      (map->tx)
-      (create)))
+      (map->tx)))
+
 
 

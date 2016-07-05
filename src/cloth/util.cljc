@@ -191,10 +191,15 @@
          "0000000000000000000000000000000000000000000000000000000000000000")
 
 (defn solidity-uint [length val]
-  (->hex (pad (int->b val) length)))
+  (->hex (pad (int->b val) (/ length 8))))
 
 (defn extract-type [type _]
-  (keyword (re-find #"^[A-z]+" (name type))))
+  (let [ts (name type)]
+    (cond
+      (re-find #"\[\]$" ts) :dynamic-array
+      (re-find #"\[\d+\]$" ts) :fixed-array
+      :else
+      (keyword (re-find #"^[A-z]+" ts)))))
 
 (defn storage-length [length]
   (let [multiples (int (/ length 32))
@@ -247,16 +252,30 @@
   (= "0000000000000000000000000000000000000000000000000000000000000001" v))
 
 ;; https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
-;; TODO still figure out how to do dynamic types correctly
 ;; - ints
 ;; - fixed and ufixed
 (defmulti encode-solidity extract-type)
 (defmethod encode-solidity :bool
   [_ val] (if val solidity-true solidity-false))
 
+(defmethod encode-solidity :fixed-array
+  [type values]
+  (let [[_ type size] (re-find #"(.*)\[(\d+)\]" type)]
+    (apply str (map (partial encode-solidity type) values))))
+
+(defmethod encode-solidity :dynamic-array
+  [type values]
+  (let [[_ type] (re-find #"(.*)\[]" type)]
+    (apply (partial str (solidity-uint 256 (count values))) (map (partial encode-solidity type) values))))
+
+(defn round-to-multiple-of [v m]
+  (if (= (mod v m) 0)
+    v
+    (* m (inc (int (/ v m))))))
+
 (defmethod encode-solidity :uint
   [type val]
-  (solidity-uint (or (extract-size type) 256) val))
+  (solidity-uint (round-to-multiple-of (extract-size type) 256) val))
 
 (defmethod encode-solidity :address
   [_ val]
@@ -272,14 +291,14 @@
        (if-let [size (extract-size type)]
          (->hex (rpad buffer size))
          (let [size (.-length buffer)]
-           (str (solidity-uint 32 size)
+           (str (solidity-uint 256 size)
                 (->hex (rpad buffer (storage-length size))))))))
   #?(:clj
      (let [buffer (.getBytes val)]
        (if-let [size (extract-size type)]
          (->hex (rpad buffer size))
          (let [size (count buffer)]
-           (str (solidity-uint 32 size)
+           (str (solidity-uint 256 size)
                 (->hex (rpad buffer (storage-length size)))))))))
 
 (defmethod encode-solidity :string
@@ -296,13 +315,15 @@
   (let [{:keys [head tail]}
         (reduce
           (fn [c [t v]]
-            (let [encoded (encode-solidity t v)]
+            (let [encoded (encode-solidity t v)
+                  ;;; This assumes all head items are 32 bytes long which is wrong
+                  head-length (* 32 (count types))]
               (if (dynamic-type? t)
                 {:count (+ (:count c) 32)
                  :head  (str (:head c)
-                             (solidity-uint 32 (+ (* 32 (count types)) ;; This is wrong
-                                                           (count (:tail c)))))
-                 :tail  encoded}
+                             (solidity-uint 256 (+ head-length
+                                                   (/ (count (:tail c)) 2))))
+                 :tail  (str (:tail c) encoded)}
                 {:count (+ (:count c) (count encoded))
                  :head (str (:head c) encoded)
                  :tail (:tail c)})))

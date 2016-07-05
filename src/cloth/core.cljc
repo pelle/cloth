@@ -38,15 +38,6 @@
                      (p/then (fn [s]
                                (when-mined tx-hash (dec attempts)))))))))))))
 
-(defn prange
-  ([end] (prange 0 end))
-  ([start end]
-    (println ">> " start "-" end)
-   (if (= start end)
-     (p/resolved end)
-     (->> (p/delay 1000 (inc start))
-         (p/mapcat #(prange % end))))))
-
 (defn faucet!
   "Donate some eth from the local rpc coinbase to current account. Intended for testing purposes only."
   ([amount]
@@ -80,15 +71,33 @@
                    (fetch-gas-price)])
            #(apply merge %))))
 
+(defn estimate-gas [t]
+  (p/catch
+    (p/then (chain/estimate-gas t)
+                   (fn [gas]
+                     (assoc t :gas-limit (* gas 3))))
+    #(do
+      (println "estimate gas error: " (prn-str %))
+      (println ">>>>>> " (prn-str t))
+      ;; Some strange error happens sometimes in testrpc
+      (assoc t :gas-limit 100000))))
+
+(defn spytx [tx]
+  ;(prn tx)
+  (prn (tx/tx->map tx))
+  tx)
+
 (defn sign-and-send!
   ([t]
    (sign-and-send! t (keypair)))
   ([t kp]
    (->> (fetch-defaults kp)
+        (p/mapcat #(estimate-gas (merge t % {:from (:address kp)})) )
         (p/mapcat
-          #(-> (merge t %)
-               (tx/create-and-sign (keys/get-private-key kp))
+          #(-> (tx/create-and-sign % (keys/get-private-key kp))
+               ;spytx
                (tx/->hex)
                (chain/send-raw-transaction)))
         (p/mapcat when-mined))))
+
 

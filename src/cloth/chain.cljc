@@ -122,6 +122,11 @@
   [data]
   (ethrpc "eth_sendRawTransaction" data))
 
+(defn estimate-gas
+  ([params]
+   (-> (ethrpc "eth_estimateGas" (select-keys params [:from :to :data :value]))
+       (p/then util/hex->int))))
+
 (defn call
   ([object] (call object "latest"))
   ([object block-number]

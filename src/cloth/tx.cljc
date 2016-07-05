@@ -19,7 +19,7 @@
      (Tx. (clj->js (map->tx params))))
   #?(:clj
      (let [{:keys [to value nonce gas-price gas-limit data] :as tx} params]
-        (Transaction. (if nonce (util/int->b nonce))
+       (Transaction. (if nonce (util/int->b nonce))
                       (if gas-price (util/int->b gas-price))
                       (if gas-limit (util/int->b gas-limit))
                       (if to (util/hex-> to))
@@ -102,30 +102,19 @@
 (defn create-and-sign
   "Convenience function create and sign a tx in one go"
   [m priv]
+  ;(println "====== " (prn-str m))
   (-> (create m)
       (sign priv)))
-
-(defn encode-fn-name [fname types]
-  (-> (str (name fname) "(" (c/join "," (map name types)) ")")
-      (util/sha3)
-      (util/->hex)
-      (c/slice 0 8)))
-
-(defn encode-args [types args]
-  (apply str (map util/solidity-format types args)))
-
-(defn encode-fn-sig [name types args]
-  (util/add0x (str (encode-fn-name name types)
-                   (encode-args types args))))
 
 (defn fn-tx
   ([contract fn-abi args]
    (let [params (if (map? (last args)) (last args) {})
-         args (if (map? (last args)) (pop args) args)]
-     (fn-tx contract (:name fn-abi) (map :type (:inputs fn-abi)) args params)))
+         args (if (map? (last args)) (pop args) args)
+         types (map :type (:inputs fn-abi))]
+     (fn-tx contract (:name fn-abi) types args params)))
   ([contract name types args params]
    (-> params
-       (assoc :data (encode-fn-sig name types args)
+       (assoc :data (util/encode-fn-sig name types args)
               :to contract)
        (map->tx))))
 

@@ -2,12 +2,15 @@
   (:require
     [cloth.core :as cloth]
     [cloth.tx :as tx]
+    [cloth.util :as util]
     [cloth.chain :as chain]
     [promesa.core :as p]
     [cuerdas.core :as c]
     #?@(:clj
-        [[clojure.java.shell :as shell]
-        [cheshire.core :as json]])))
+        [
+    [clojure.java.shell :as shell]
+    [cheshire.core :as json]])
+    [cloth.util :as util]))
 
 
 #?(:clj
@@ -25,17 +28,38 @@
        (p/mapcat chain/get-transaction-receipt)
        (p/mapcat (fn [receipt] (p/resolved (:contract-address receipt))))))
 
-
-
 (defn call-contract-fn
   [fabi contract args]
-  (cloth.chain/call
-    (cloth.tx/fn-tx contract fabi args)))
+  (->> (cloth.chain/call
+         (assoc (cloth.tx/fn-tx contract fabi args)
+           :from (:address (cloth/keypair))))
+       (p/mapcat (fn [val]
+                   ;(println "returned: " val)
+                   (let [output-types (map keyword (map :type (:outputs fabi)))
+                         ;_ (prn output-types)
+                         outputs (map util/decode-solidity output-types
+                                      (map (partial apply str) (partition 64 (util/strip0x val))))
+                         outputs (if (< (count outputs) 2)
+                                   (first outputs)
+                                   (apply merge
+                                          (map
+                                            (fn [n v] {(keyword (c/dasherize n)) v})
+                                            (map :name (:outputs fabi))
+                                            outputs)))]
+                     ;_ (prn outputs)
+                     (p/resolved outputs))
+                   ))))
+
 
 (defn create-fn-tx
   [fn-abi contract args]
   (cloth.core/sign-and-send!
     (cloth.tx/fn-tx contract fn-abi args)))
+
+(defn create-fn-and-wait-for-receipt
+  [fn-abi contract args]
+  (->> (create-fn-tx fn-abi contract args)
+       (p/mapcat chain/get-transaction-receipt)))
 
 ;; (<function name>!)
 #?(:clj
@@ -68,8 +92,15 @@
                 `(defn ~(symbol (c/dasherize (:name f)))
                    [contract# & args#]
                    (call-contract-fn ~f contract# args#))
-                `(defn ~(symbol (str (c/dasherize (:name f)) "!"))
-                   [contract# & args#]
-                   (create-fn-tx ~f contract# args#))))))))
+                `(do
+                   (defn ~(symbol (str (c/dasherize (:name f)) "!"))
+                       [contract# & args#]
+                       (create-fn-tx ~f contract# args#))
+                   (defn ~(symbol (str (c/dasherize (:name f)) "!!"))
+                     [contract# & args#]
+                     (create-fn-and-wait-for-receipt ~f contract# args#))
+                   (defn ~(symbol (str (c/dasherize (:name f)) "?"))
+                      [contract# & args#]
+                      (call-contract-fn ~f contract# args#)))))))))
 
 

@@ -1,5 +1,5 @@
 (ns cloth.util
-  (:require [cuerdas.core :as cuerdas]
+  (:require [cuerdas.core :as c]
     #?@(:cljs [ethereumjs-tx]))
   #?(:clj
      (:import
@@ -42,7 +42,7 @@
 
 (defn strip0x [input]
   (if (re-find #"^0x" input)
-    (cuerdas/slice input 2)
+    (c/slice input 2)
     input))
 
 (defn pad-to-even [hex]
@@ -211,21 +211,61 @@
   (when-let [size (re-find #"\d+" (name type))]
     (storage-length (parse-int size))))
 
+(defn dynamic-type? [type]
+  (re-find #"^(bytes|string|.*\[\])$" (name type)))
+
+;; TODO move these to utils
+(defmulti decode-solidity extract-type)
+
+(defmethod decode-solidity :default
+  [t v]
+  (println "received " t "= " v)
+  v)
+
+(defmethod decode-solidity :address
+  [_ v]
+  (add0x (c/slice v 24)))
+
+(defmethod decode-solidity :uint
+  [_ v]
+  (hex->int v))
+
+(defmethod decode-solidity :bytes
+  [type v]
+  (if-let [size (extract-size type)]
+    (hex-> v)
+    (let [size (hex->int (c/slice v 0 64))]
+      (hex-> (c/slice v 64 (+ 64 (* 2 size)))))))
+
+(defmethod decode-solidity :string
+  [_ v]
+  ;; TODO cljs version
+  (String. (decode-solidity :bytes v)))
+
+(defmethod decode-solidity :bool
+  [_ v]
+  (= "0000000000000000000000000000000000000000000000000000000000000001" v))
+
 ;; https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
 ;; TODO still figure out how to do dynamic types correctly
 ;; - ints
 ;; - fixed and ufixed
-(defmulti solidity-format extract-type)
-(defmethod solidity-format :bool
+(defmulti encode-solidity extract-type)
+(defmethod encode-solidity :bool
   [_ val] (if val solidity-true solidity-false))
-(defmethod solidity-format :uint
+
+(defmethod encode-solidity :uint
   [type val]
   (solidity-uint (or (extract-size type) 256) val))
-(defmethod solidity-format :address
-  [_ val]
-  (strip0x val))
 
-(defmethod solidity-format :bytes
+(defmethod encode-solidity :address
+  [_ val]
+  (-> (strip0x val)
+      (hex->b)
+      (pad 32)
+      (->hex)))
+
+(defmethod encode-solidity :bytes
   [type val]
   #?(:cljs
      (let [buffer (Buffer. val)]
@@ -242,6 +282,33 @@
            (str (solidity-uint 32 size)
                 (->hex (rpad buffer (storage-length size)))))))))
 
-(defmethod solidity-format :string
+(defmethod encode-solidity :string
   [_ val]
-  (solidity-format :bytes val))
+  (encode-solidity :bytes val))
+
+(defn encode-fn-name [fname types]
+  (-> (str (name fname) "(" (c/join "," (map name types)) ")")
+      (sha3)
+      (->hex)
+      (c/slice 0 8)))
+
+(defn encode-args [types args]
+  (let [{:keys [head tail]}
+        (reduce
+          (fn [c [t v]]
+            (let [encoded (encode-solidity t v)]
+              (if (dynamic-type? t)
+                {:count (+ (:count c) 32)
+                 :head  (str (:head c)
+                             (solidity-uint 32 (+ (* 32 (count types)) ;; This is wrong
+                                                           (count (:tail c)))))
+                 :tail  encoded}
+                {:count (+ (:count c) (count encoded))
+                 :head (str (:head c) encoded)
+                 :tail (:tail c)})))
+          {:count 0 :head "" :tail ""} (map vector types args))]
+    (str head tail)))
+
+(defn encode-fn-sig [name types args]
+  (add0x (str (encode-fn-name name types)
+                   (encode-args types args))))

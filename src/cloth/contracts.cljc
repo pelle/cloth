@@ -35,19 +35,7 @@
            :from (:address (cloth/keypair))))
        (p/mapcat (fn [val]
                    ;(println "returned: " val)
-                   (let [output-types (map keyword (map :type (:outputs fabi)))
-                         ;_ (prn output-types)
-                         outputs (map util/decode-solidity output-types
-                                      (map (partial apply str) (partition 64 (util/strip0x val))))
-                         outputs (if (< (count outputs) 2)
-                                   (first outputs)
-                                   (apply merge
-                                          (map
-                                            (fn [n v] {(keyword (c/dasherize n)) v})
-                                            (map :name (:outputs fabi))
-                                            outputs)))]
-                     ;_ (prn outputs)
-                     (p/resolved outputs))
+                   (p/resolved (util/decode-return-value fabi val))
                    ))))
 
 

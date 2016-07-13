@@ -333,3 +333,32 @@
 (defn encode-fn-sig [name types args]
   (add0x (str (encode-fn-name name types)
                    (encode-args types args))))
+
+(defn decode-solidity-data [types data]
+  (if (or (empty? data) (empty? types))
+    nil
+    (let [type (first types)
+          data-size (round-to-multiple-of (or (extract-size type) 256) 256)
+          data-size (if (dynamic-type? type)
+                      (+ data-size 256)
+                      data-size)
+          data-size (/ data-size 4)
+          start (if (dynamic-type? type)
+                  256 0)
+          ]
+      (cons (decode-solidity type (c/slice data start data-size))
+            (lazy-seq (decode-solidity-data (rest types) (c/slice data data-size))))))
+  )
+
+(defn decode-return-value
+  [fabi data]
+  (let [outputs (decode-solidity-data (map :type (:outputs fabi)) (strip0x data))
+        outputs (if (< (count outputs) 2)
+                  (first outputs)
+                  (apply merge
+                         (map
+                           (fn [n v] {(keyword (c/dasherize n)) v})
+                           (map :name (:outputs fabi))
+                           outputs)))]
+    outputs))
+

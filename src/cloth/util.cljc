@@ -235,6 +235,11 @@
   [_ v]
   (hex->int v))
 
+(defmethod decode-solidity :fixed
+  [type v]
+  (let [n (or (extract-size type) 128)]
+    (/ (bigdec (hex->int v)) (.pow (biginteger 2N) n))))
+
 (defmethod decode-solidity :bytes
   [type v]
   (if-let [size (extract-size type)]
@@ -276,6 +281,12 @@
 (defmethod encode-solidity :uint
   [type val]
   (solidity-uint (round-to-multiple-of (extract-size type) 256) val))
+
+(defmethod encode-solidity :fixed
+  [type v]
+  ;; TODO support
+  (let [n (or (extract-size type) 128)]
+    (solidity-uint 256 (biginteger (* (bigdec v) (.pow (biginteger 2N) n))))))
 
 (defmethod encode-solidity :address
   [_ val]

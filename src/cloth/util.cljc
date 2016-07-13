@@ -125,6 +125,20 @@
            (java.lang.System/arraycopy buffer (- (count buffer) l) padded 0 l))
          padded))))
 
+(defn negative-pad
+  "Left Pads an `Array` or `Buffer` with leading zeros until it has `length` bytes.
+   Or it truncates the beginning if it exceeds."
+  [buffer l]
+  #?(:cljs ((aget eth-util "pad") buffer l))
+  #?(:clj
+     (if (= (count buffer) l)
+       buffer
+       (let [padded (byte-array l (repeat 255))]
+         (if (> l (count buffer))
+           (java.lang.System/arraycopy buffer 0 padded (- l (count buffer)) (count buffer))
+           (java.lang.System/arraycopy buffer (- (count buffer) l) padded 0 l))
+         padded))))
+
 (def lpad pad)
 
 (defn rpad
@@ -152,6 +166,13 @@
   [b]
   #?(:cljs
      ((aget eth-util "fromSigned") b))
+  #?(:clj (if (and b (not= (count b) 0)) (BigInteger. b) 0)))
+
+(defn b->ubn
+  "Interprets a `Buffer` as a unsigned integer and returns a `BN`. Assumes 256-bit numbers."
+  [b]
+  #?(:cljs
+     ((aget eth-util "fromSigned") b))
   #?(:clj (if b (BigInteger. 1 b) 0)))
 
 (defn bn->b
@@ -175,15 +196,35 @@
   (->hex (int->b number)))
 
 (defn b->int
-  "Converts a `Buffer` or `bytearray` to a `Number`"
+  "Converts a `Buffer` or `bytearray` to a signed `Number`"
   [b]
   #?(:cljs ((aget eth-util "bufferToInt") b))
   #?(:clj (b->bn b)))
 
+(defn b->uint
+  "Converts a `Buffer` or `bytearray` to a unsigned `Number`"
+  [b]
+  #?(:cljs ((aget eth-util "bufferToInt") b))
+  #?(:clj (b->ubn b)))
+
+(defn hex->uint
+  "Convers a hex `string` into a number"
+  [string]
+  (-> (strip0x string)
+      ((partial str "00"))
+      (hex->)
+      (b->uint)))
+
+(defn spy [x]
+  (prn x)
+  x)
+
 (defn hex->int
   "Convers a hex `string` into a number"
   [string]
-  (b->int (hex-> string)))
+  (-> (clojure.string/replace-first (strip0x string) #"^(ff)+" "ff")
+      (hex->)
+      (b->int)))
 
 (defonce solidity-true
          "0000000000000000000000000000000000000000000000000000000000000001")
@@ -192,6 +233,10 @@
 
 (defn solidity-uint [length val]
   (->hex (pad (int->b val) (/ length 8))))
+
+(defn solidity-int [length val]
+  (let [pad (if (neg? val) negative-pad pad)]
+    (->hex (pad (int->b val) (/ length 8)))))
 
 (defn extract-type [type _]
   (let [ts (name type)]
@@ -233,12 +278,22 @@
 
 (defmethod decode-solidity :uint
   [_ v]
+  (hex->uint v))
+
+(defmethod decode-solidity :int
+  [_ v]
   (hex->int v))
 
 (defmethod decode-solidity :fixed
   [type v]
   (let [n (or (extract-size type) 128)]
     (/ (bigdec (hex->int v)) (.pow (biginteger 2N) n))))
+
+(defmethod decode-solidity :ufixed
+  [type v]
+  (let [n (or (extract-size type) 128)]
+    (/ (bigdec (hex->int v)) (.pow (biginteger 2N) n))))
+
 
 (defmethod decode-solidity :bytes
   [type v]
@@ -282,9 +337,19 @@
   [type val]
   (solidity-uint (round-to-multiple-of (extract-size type) 256) val))
 
+(defmethod encode-solidity :int
+  [type val]
+  (solidity-int (round-to-multiple-of (extract-size type) 256) val))
+
 (defmethod encode-solidity :fixed
   [type v]
-  ;; TODO support
+  ;; TODO currently supports fixedMxN where M is 128
+  (let [n (or (extract-size type) 128)]
+    (solidity-int 256 (biginteger (* (bigdec v) (.pow (biginteger 2N) n))))))
+
+(defmethod encode-solidity :ufixed
+  [type v]
+  ;; TODO currently supports ufixedMxN where M is 128
   (let [n (or (extract-size type) 128)]
     (solidity-uint 256 (biginteger (* (bigdec v) (.pow (biginteger 2N) n))))))
 

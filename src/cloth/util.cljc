@@ -1,6 +1,6 @@
 (ns cloth.util
   (:require [cuerdas.core :as c]
-    #?@(:cljs [ethereumjs-tx]))
+    #?@(:cljs [[ethereumjs-tx]]))
   #?(:clj
      (:import
        [org.spongycastle.util.encoders Hex]
@@ -11,6 +11,12 @@
    (def eth-util js/ethUtil))
 #?(:cljs
    (def Buffer js/Buffer))
+#?(:cljs
+   (def BN (aget eth-util "BN")))
+#?(:cljs
+   (defn biginteger [buffer]
+     (BN. buffer)))
+
 #?(:cljs
    (defn ->buffer [val]
      ((aget eth-util "toBuffer") (clj->js val))))
@@ -115,7 +121,7 @@
   "Left Pads an `Array` or `Buffer` with leading zeros until it has `length` bytes.
    Or it truncates the beginning if it exceeds."
   [buffer l]
-  #?(:cljs ((aget eth-util "pad") buffer l))
+  #?(:cljs ((aget eth-util "setLengthLeft") buffer l))
   #?(:clj
      (if (= (count buffer) l)
        buffer
@@ -129,7 +135,7 @@
   "Left Pads an `Array` or `Buffer` with leading zeros until it has `length` bytes.
    Or it truncates the beginning if it exceeds."
   [buffer l]
-  #?(:cljs ((aget eth-util "pad") buffer l))
+  #?(:cljs ((aget eth-util "setLengthLeft") buffer l))
   #?(:clj
      (if (= (count buffer) l)
        buffer
@@ -142,10 +148,13 @@
 (def lpad pad)
 
 (defn rpad
-  "Right Pads an `Array` or `Buffer` with trailing zeros untill it has `length` bytes.
+  "Right Pads an `Array` or `Buffer` with trailing zeros until it has `length` bytes.
    Or it truncates the beginning if it exceeds."
   [buffer l]
-  #?(:cljs ((aget eth-util "rpad") buffer l))
+  #?(:cljs
+     (if (< l (.-length buffer))
+       (.slice buffer (- (.-length buffer) l))
+       ((aget eth-util "setLengthRight") buffer l)))
   #?(:clj
      (if (= (count buffer) l)
        buffer
@@ -160,20 +169,6 @@
      "Trims leading zeros from a `Buffer` or an `Array`"
      [buffer]
      ((aget eth-util "unpad") buffer)))
-
-(defn b->bn
-  "Interprets a `Buffer` as a signed integer and returns a `BN`. Assumes 256-bit numbers."
-  [b]
-  #?(:cljs
-     ((aget eth-util "fromSigned") b))
-  #?(:clj (if (and b (not= (count b) 0)) (BigInteger. b) 0)))
-
-(defn b->ubn
-  "Interprets a `Buffer` as a unsigned integer and returns a `BN`. Assumes 256-bit numbers."
-  [b]
-  #?(:cljs
-     ((aget eth-util "fromSigned") b))
-  #?(:clj (if b (BigInteger. 1 b) 0)))
 
 (defn bn->b
   "Converts a `BN` or `BigNumber` to an unsigned integer and returns it as a `Buffer` or ByteArray. Assumes 256-bit numbers."
@@ -196,19 +191,23 @@
   (->hex (int->b number)))
 
 (defn b->int
-  "Converts a `Buffer` or `bytearray` to a signed `Number`"
+  "Interprets a `Buffer` as a signed integer and returns a `BN` or 'BigInteger. Assumes 256-bit numbers."
   [b]
-  #?(:cljs ((aget eth-util "bufferToInt") b))
-  #?(:clj (b->bn b)))
+  #?(:cljs
+     (.toTwos (biginteger b) 256))
+  #?(:clj (if (and b (not= (count b) 0))
+            (BigInteger. b)
+            0)))
 
 (defn b->uint
-  "Converts a `Buffer` or `bytearray` to a unsigned `Number`"
+  "Interprets a `Buffer` as a unsigned integer and returns a `BN`. Assumes 256-bit numbers."
   [b]
-  #?(:cljs ((aget eth-util "bufferToInt") b))
-  #?(:clj (b->ubn b)))
+  #?(:cljs
+     (biginteger b))
+  #?(:clj (if b (BigInteger. b) 0)))
 
 (defn hex->uint
-  "Convers a hex `string` into a number"
+  "Convers a hex `string` into a uint"
   [string]
   (-> (strip0x string)
       ((partial str "00"))
@@ -220,11 +219,14 @@
   x)
 
 (defn hex->int
-  "Convers a hex `string` into a number"
-  [string]
-  (-> (clojure.string/replace-first (strip0x string) #"^(ff)+" "ff")
-      (hex->)
-      (b->int)))
+  "Convers a hex `string` into a signed integer"
+  [hex]
+  #?(:cljs
+     (-> (hex-> hex)
+         (b->int)))
+  #?(:clj
+    (-> (hex-> hex)
+        (b->int))))
 
 (defonce solidity-true
          "0000000000000000000000000000000000000000000000000000000000000001")
@@ -284,15 +286,17 @@
   [_ v]
   (hex->int v))
 
-(defmethod decode-solidity :fixed
-  [type v]
-  (let [n (or (extract-size type) 128)]
-    (/ (bigdec (hex->int v)) (.pow (biginteger 2N) n))))
+#?(:clj
+   (defmethod decode-solidity :fixed
+     [type v]
+     (let [n (or (extract-size type) 128)]
+       (/ (bigdec (hex->int v)) (.pow (biginteger 2N) n)))))
 
-(defmethod decode-solidity :ufixed
-  [type v]
-  (let [n (or (extract-size type) 128)]
-    (/ (bigdec (hex->int v)) (.pow (biginteger 2N) n))))
+#?(:clj
+   (defmethod decode-solidity :ufixed
+     [type v]
+     (let [n (or (extract-size type) 128)]
+       (/ (bigdec (hex->int v)) (.pow (biginteger 2N) n)))))
 
 
 (defmethod decode-solidity :bytes
@@ -305,7 +309,10 @@
 (defmethod decode-solidity :string
   [_ v]
   ;; TODO cljs version
-  (String. (decode-solidity :bytes v)))
+  #?(:cljs
+     (.toString (decode-solidity :bytes v))
+     :clj
+     (String. (decode-solidity :bytes v))))
 
 (defmethod decode-solidity :bool
   [_ v]
@@ -341,17 +348,19 @@
   [type val]
   (solidity-int (round-to-multiple-of (extract-size type) 256) val))
 
-(defmethod encode-solidity :fixed
-  [type v]
-  ;; TODO currently supports fixedMxN where M is 128
-  (let [n (or (extract-size type) 128)]
-    (solidity-int 256 (biginteger (* (bigdec v) (.pow (biginteger 2N) n))))))
+#?(:clj
+   (defmethod encode-solidity :fixed
+     [type v]
+     ;; TODO currently supports fixedMxN where M is 128
+     (let [n (or (extract-size type) 128)]
+       (solidity-int 256 (biginteger (* (bigdec v) (.pow (biginteger 2N) n)))))))
 
-(defmethod encode-solidity :ufixed
-  [type v]
-  ;; TODO currently supports ufixedMxN where M is 128
-  (let [n (or (extract-size type) 128)]
-    (solidity-uint 256 (biginteger (* (bigdec v) (.pow (biginteger 2N) n))))))
+#?(:clj
+   (defmethod encode-solidity :ufixed
+     [type v]
+     ;; TODO currently supports ufixedMxN where M is 128
+     (let [n (or (extract-size type) 128)]
+       (solidity-uint 256 (biginteger (* (bigdec v) (.pow (biginteger 2N) n)))))))
 
 (defmethod encode-solidity :address
   [_ val]

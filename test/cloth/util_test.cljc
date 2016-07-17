@@ -1,7 +1,14 @@
 (ns cloth.util-test
   (:require [cloth.util :as util]
-    #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]]
+    #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]
+               [cloth.util :refer [biginteger]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
+
+(defn eq
+  [a b]
+  (let [b (biginteger b)]
+    #?(:clj  (.equals a b)
+       :cljs (.eq a b))))
 
 (deftest test-add0x
   (is (= (util/add0x "ab0c") "0xab0c"))
@@ -15,20 +22,20 @@
   (is (= (util/->hex (util/sha3 "hello")) "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8")))
 
 (deftest test-hex->int
-  (is (= (util/hex->int "0x0") 0))
-  (is (= (util/hex->int "0x00") 0))
-  (is (= (util/hex->int "0xff00") -256))
-  (is (= (util/hex->int "0x00ff00") 65280))
-  (is (= (util/hex->int "00") 0))
-  (is (= (util/hex->int "ff00") -256))
-  (is (= (util/hex->int "00ff00") 65280)))
+  (is (eq (util/hex->int "0x0") 0))
+  (is (eq (util/hex->int "0x00") 0))
+  (is (eq (util/hex->int "0xff00") -256))
+  (is (eq (util/hex->int "0x00ff00") 65280))
+  (is (eq (util/hex->int "00") 0))
+  (is (eq (util/hex->int "ff00") -256))
+  (is (eq (util/hex->int "00ff00") 65280)))
 
 (deftest test-hex->uint
-  (is (= (util/hex->uint "0x0") 0))
-  (is (= (util/hex->uint "0x00") 0))
-  (is (= (util/hex->uint "0xff00") 65280))
-  (is (= (util/hex->uint "00") 0))
-  (is (= (util/hex->uint "ff00") 65280)))
+  (is (eq (util/hex->uint "0x0") 0))
+  (is (eq (util/hex->uint "0x00") 0))
+  (is (eq (util/hex->uint "0xff00") 65280))
+  (is (eq (util/hex->uint "00") 0))
+  (is (eq (util/hex->uint "ff00") 65280)))
 
 (deftest test-int->hex
   (is (= (util/int->hex 0) "00"))
@@ -66,45 +73,34 @@
   (is (= (util/encode-solidity :int32 -1) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
   (is (= (util/encode-solidity :int32 -16772216) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388"))
 
-  (is (= (util/encode-solidity :fixed 2.125) "0000000000000000000000000000000220000000000000000000000000000000"))
-  (is (= (util/encode-solidity :fixed128x128 2.125) "0000000000000000000000000000000220000000000000000000000000000000"))
-  (is (= (util/encode-solidity :fixed 8.5) "0000000000000000000000000000000880000000000000000000000000000000"))
-  (is (= (util/encode-solidity :fixed128x128 8.5) "0000000000000000000000000000000880000000000000000000000000000000"))
-
-
   (is (= (util/encode-solidity :string "hello") "000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000"))
   (is (= (util/encode-solidity :string " ") "00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000"))
-
   )
+
+#?(:clj
+   (deftest encoded-fixed-tests
+     (is (= (util/encode-solidity :fixed 2.125) "0000000000000000000000000000000220000000000000000000000000000000"))
+     (is (= (util/encode-solidity :fixed128x128 2.125) "0000000000000000000000000000000220000000000000000000000000000000"))
+     (is (= (util/encode-solidity :fixed 8.5) "0000000000000000000000000000000880000000000000000000000000000000"))
+     (is (= (util/encode-solidity :fixed128x128 8.5) "0000000000000000000000000000000880000000000000000000000000000000"))))
 
 (deftest decode-solidity-tests
   (is (= (util/decode-solidity :bool "0000000000000000000000000000000000000000000000000000000000000001") true ))
   (is (= (util/decode-solidity :bool  "0000000000000000000000000000000000000000000000000000000000000000") false ))
-  (is (= (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000001") 1))
-  (is (= (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000000") 0))
-  (is (= (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000001") 1))
-  (is (= (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000000") 0))
+  (is (eq (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000001") 1))
+  (is (eq (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000000") 0))
+  (is (eq (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000001") 1))
+  (is (eq (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000000") 0))
 
 
-  (is (= (util/decode-solidity :int8 "0000000000000000000000000000000000000000000000000000000000000001") 1))
-  (is (= (util/decode-solidity :int8 "0000000000000000000000000000000000000000000000000000000000000000") 0))
-  (is (= (util/decode-solidity :int8 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") -1))
-  (is (= (util/decode-solidity :int8 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388") -16772216))
-  (is (= (util/decode-solidity :int32 "0000000000000000000000000000000000000000000000000000000000000001") 1))
-  (is (= (util/decode-solidity :int32 "0000000000000000000000000000000000000000000000000000000000000000") 0))
-  (is (= (util/decode-solidity :int32 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") -1))
-  (is (= (util/decode-solidity :int32 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388") -16772216))
-
-  (is (= (util/decode-solidity :fixed "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
-  (is (= (util/decode-solidity :fixed128x128 "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
-  (is (= (util/decode-solidity :fixed "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))
-  (is (= (util/decode-solidity :fixed128x128 "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))
-
-  (is (= (util/decode-solidity :ufixed "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
-  (is (= (util/decode-solidity :ufixed128x128 "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
-  (is (= (util/decode-solidity :ufixed "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))
-  (is (= (util/decode-solidity :ufixed128x128 "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))
-
+  (is (eq (util/decode-solidity :int8 "0000000000000000000000000000000000000000000000000000000000000001") 1))
+  (is (eq (util/decode-solidity :int8 "0000000000000000000000000000000000000000000000000000000000000000") 0))
+  (is (eq (util/decode-solidity :int8 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") -1))
+  (is (eq (util/decode-solidity :int8 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388") -16772216))
+  (is (eq (util/decode-solidity :int32 "0000000000000000000000000000000000000000000000000000000000000001") 1))
+  (is (eq (util/decode-solidity :int32 "0000000000000000000000000000000000000000000000000000000000000000") 0))
+  (is (eq (util/decode-solidity :int32 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") -1))
+  (is (eq (util/decode-solidity :int32 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388") -16772216))
 
   (is (= (util/decode-solidity :string "000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000")
          "hello"))
@@ -112,21 +108,34 @@
   (is (= (util/decode-solidity :address "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x00439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
   )
 
+#?(:clj
+   (deftest fixed-decode-test
+     (is (= (util/decode-solidity :fixed "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
+     (is (= (util/decode-solidity :fixed128x128 "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
+     (is (= (util/decode-solidity :fixed "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))
+     (is (= (util/decode-solidity :fixed128x128 "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))
+
+     (is (= (util/decode-solidity :ufixed "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
+     (is (= (util/decode-solidity :ufixed128x128 "0000000000000000000000000000000220000000000000000000000000000000") 2.125M))
+     (is (= (util/decode-solidity :ufixed "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))
+     (is (= (util/decode-solidity :ufixed128x128 "0000000000000000000000000000000880000000000000000000000000000000") 8.5M))))
+
 (deftest dynamic-type-tests
   (is (util/dynamic-type? :bytes))
   (is (util/dynamic-type? :string))
   (is (util/dynamic-type? "uint32[]"))
   (is (not (util/dynamic-type? "uint32[3]")))
   (is (not (util/dynamic-type? :bytes32)))
-  (is (not (util/dynamic-type? :uint256)))
-  )
+  (is (not (util/dynamic-type? :uint256))))
+
 (deftest encode-fn-sig-tests
   ; Eamples from https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
   (is (= (util/encode-fn-sig "baz" [:uint32 :bool] [69 true])                         ;baz(uint32 x, bool y)
          "0xcdcd77c000000000000000000000000000000000000000000000000000000000000000450000000000000000000000000000000000000000000000000000000000000001"))
 
-  (is (= (util/encode-fn-sig "bar" ["fixed128x128[2]"] [[2.125, 8.5]])                         ;bar(fixed[2] xy)
-         "0xab55044d00000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000880000000000000000000000000000000"))
+  #(:clj
+    (is (= (util/encode-fn-sig "bar" ["fixed128x128[2]"] [[2.125, 8.5]]) ;bar(fixed[2] xy)
+           "0xab55044d00000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000880000000000000000000000000000000")))
 
   (is (= (util/encode-fn-sig "sam" [:bytes :bool "uint256[]"] ["dave" true [1,2,3]])                         ;sam(bytes name, bool z, uint[] data)
          "0xa5643bf20000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000464617665000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003"))
@@ -139,3 +148,4 @@
 
 (deftest decode-solidity-data-tests
   (is (util/decode-solidity-data [:address] "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x00439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
+

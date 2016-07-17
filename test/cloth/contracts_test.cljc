@@ -3,9 +3,10 @@
             [cloth.keys :as keys]
             [promesa.core :as p]
             [cloth.chain :as chain]
-            [cloth.contracts :refer :all]
-    #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]]
-        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
+    #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]
+               [cloth.contracts :as c :refer-macros [defcontract]]]
+        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]
+               [cloth.contracts :as c :refer [defcontract] ]])))
 
 (defn create-new-keypair! []
   (reset! core/global-keypair (keys/create-keypair)))
@@ -13,7 +14,7 @@
 
 #?(:clj
    (deftest compile-solidity-test
-     (let [info (compile-solidity "test/cloth/SimpleToken.sol")]
+     (let [info (c/compile-solidity "test/cloth/SimpleToken.sol")]
        (is (= (keys info) '(:contracts :version))))
      ))
 

@@ -10,7 +10,7 @@
 
 (deftest map->tx-test
   (is (= (tx/map->tx {}) {}))
-  (is (= (tx/map->tx {:gas-price 123 :to "00"}) {"gasPrice" 123 "to" "0x00"})))
+  (is (= (tx/map->tx {:gas-price 123 :to "00"}) {:gasPrice 123 :to "0x00"})))
 
 (deftest create-test
   (is (= (tx/tx->map (tx/create {})) {:to "0x00", :data nil, :nonce 0, :gas-price 0, :gas-limit 0, :value 0}))

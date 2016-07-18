@@ -19,44 +19,44 @@
 
 (defn gas-price []
   (-> (ethrpc "eth_gasPrice")
-      (p/then util/hex->int)))
+      (p/then util/hex->uint)))
 
 (defn block-number []
   (-> (ethrpc "eth_blockNumber")
-      (p/then util/hex->int)))
+      (p/then util/hex->uint)))
 
 (defn get-balance
   ([address] (get-balance address "latest"))
   ([address block-number]
    (-> (ethrpc "eth_getBalance" address block-number)
-       (p/then util/hex->int))))
+       (p/then util/hex->uint))))
 
 (defn get-transaction-count
   ([address] (get-transaction-count address "latest"))
   ([address block-number]
    (-> (ethrpc "eth_getTransactionCount" address block-number)
-       (p/then util/hex->int))))
+       (p/then util/hex->uint))))
 
 (defn rpc->tx [tx]
   (if tx
     (-> (select-keys tx [:from :to :hash :input])
-        (assoc :value (util/hex->int (:value tx))
+        (assoc :value (util/hex->uint (:value tx))
                :block-hash (:blockHash tx)
-               :block-number (util/hex->int (:blockNumber tx))
-               :nonce (util/hex->int (:nonce tx))
-               :gas (util/hex->int (:gas tx))
-               :gas-price (util/hex->int (:gasPrice tx))
-               :transaction-index (util/hex->int (:transactionIndex tx))))))
+               :block-number (util/hex->uint (:blockNumber tx))
+               :nonce (util/hex->uint (:nonce tx))
+               :gas (util/hex->uint (:gas tx))
+               :gas-price (util/hex->uint (:gasPrice tx))
+               :transaction-index (util/hex->uint (:transactionIndex tx))))))
 
 (defn receipt->tx [tx]
   (if tx
     {:hash (:transactionHash tx)
-     :transaction-index (util/hex->int (:transactionIndex tx))
+     :transaction-index (util/hex->uint (:transactionIndex tx))
      :block-hash (:blockHash tx)
-     :block-number (util/hex->int (:blockNumber tx))
+     :block-number (util/hex->uint (:blockNumber tx))
      :contract-address (:contractAddress tx)
-     :cumulative-gas-used (util/hex->int (:cumulativeGasUsed tx))
-     :gas-used (util/hex->int (:gasUsed tx))
+     :cumulative-gas-used (util/hex->uint (:cumulativeGasUsed tx))
+     :gas-used (util/hex->uint (:gasUsed tx))
      :logs (:logs tx)}))
 
 (defn rpc->block [block]
@@ -70,13 +70,13 @@
                :sha3-uncles       (:sha3uncles block)
                :extra-data        (:extraData block)
                :transactions      (mapv rpc->tx (:transactions block))
-               :number            (util/hex->int (:number block))
-               :difficulty        (util/hex->int (:difficulty block))
-               :gas-used          (util/hex->int (:gasUsed block))
-               :nonce             (util/hex->int (:nonce block))
-               :gas-limit         (util/hex->int (:gasLimit block))
-               :total-difficulty  (util/hex->int (:totalDifficulty block))
-               :timestamp         (coerce/from-long (* 1000 (long (util/hex->int (:timestamp block)))))))))
+               :number            (util/hex->uint (:number block))
+               :difficulty        (util/hex->uint (:difficulty block))
+               :gas-used          (util/hex->uint (:gasUsed block))
+               :nonce             (util/hex->uint (:nonce block))
+               :gas-limit         (util/hex->uint (:gasLimit block))
+               :total-difficulty  (util/hex->uint (:totalDifficulty block))
+               :timestamp         (coerce/from-long (* 1000 (long (util/hex->uint (:timestamp block)))))))))
 
 (defn get-block-by-hash
   ([hash]
@@ -103,9 +103,10 @@
           rpc->tx))
 
 (defn get-transaction-receipt
-  [hash]
-  (p/then (ethrpc "eth_getTransactionReceipt" hash)
-          receipt->tx))
+  [tx-or-hash]
+  (let [hash (:hash tx-or-hash tx-or-hash)]
+    (p/then (ethrpc "eth_getTransactionReceipt" hash)
+            receipt->tx)))
 
 (defn get-storage-at
   ([address index]
@@ -120,6 +121,11 @@
 (defn send-raw-transaction
   [data]
   (ethrpc "eth_sendRawTransaction" data))
+
+(defn estimate-gas
+  ([params]
+   (-> (ethrpc "eth_estimateGas" (select-keys params [:from :to :data :value]))
+       (p/then util/hex->uint))))
 
 (defn call
   ([object] (call object "latest"))

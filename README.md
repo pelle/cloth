@@ -6,7 +6,7 @@ This is extremely WIP and really should not be used by anyone yet. API is likely
 
 Add the following to your project.clj file:
 
-`[cloth "0.2.4"]`
+`[cloth "0.2.5"]`
 
 Note I have not tested any of this in production or using minified clojurescript code.
 
@@ -78,6 +78,40 @@ All code in the `cloth.core` namespace uses the `(cloth.core/keypair)` function 
 
 Instead of callbacks we use [promesa](http://funcool.github.io/promesa/latest/) which allow us to compose functions easily.
 
+## Solidity Contracts
+
+The `cloth.contracts` namespace allows you to compile solidity code and create clojure functions for each function in your solidity contract.
+
+```clojure
+;; For Clojure
+(require '[cloth.contracts :as c])
+;; For ClojureScript
+(require '[cloth.contracts :as c :refer-macros [defcontract]])
+
+(defcontract simple-token "test/cloth/SimpleToken.sol")
+
+;; For simplicity sake the rest of the examples use Clojure @ syntax for dereferencing Promises
+
+;; Deploy the solidity code to the blockchain
+(def contract-address @(deploy-simple-token!))
+
+;; Constant functions (that is for quering data from a smart contract)
+
+@(circulation contract-address)
+=> 0
+
+;; Call a transaction function. Promise returns when it is mined
+@(issue! contract recipient 123)
+
+;; Check return value of a transaction function but doesn't actually create a transaction
+@(issue? contract recipient 123)
+
+```
+
+Note `defcontract` creates the functions in the namespace where it is called. 
+
+To compile contracts you need `solc` the Solidity compiler installed.
+
 ## General ETH JSON-RPC like interface:
 
 See the `cloth.chain` namespace which has bindings for most JSON-RPC calls that lets you query the blockchain.
@@ -116,10 +150,10 @@ Run `lein test` or `lein test-refresh`.
 
 We use [doo](https://github.com/bensu/doo) 
 
-Install a js environment such as phantomjs
+Follow instructions on above site
 
 ```
-lein doo phantom test
+lein doo chrome test
 ```
 
 ## License

@@ -1,22 +1,53 @@
 (ns cloth.contracts
-  #?(:clj (:require [clojure.java.shell :refer [sh]]
-                    [cheshire.core :as json]
-                    [cuerdas.core :as c]))
-  #?(:cljs (:require
-             [cloth.core]
-             [cloth.tx]
-             [cloth.chain])))
+  (:require
+    [cloth.core :as cloth]
+    [cloth.tx :as tx]
+    [cloth.util :as util]
+    [cloth.chain :as chain]
+    [promesa.core :as p]
+    [cuerdas.core :as c]
+    #?@(:clj
+        [
+    [clojure.java.shell :as shell]
+    [cheshire.core :as json]])
+    [cloth.util :as util]))
 
 
 #?(:clj
    (defn compile-solidity [file]
-     (json/parse-string (:out (sh "solc" "--combined-json" "abi,bin" file)) true)))
-
-
+     (json/parse-string (:out (shell/sh "solc" "--combined-json" "abi,bin" file)) true)))
 
 #?(:clj
    (defn abi->args [f]
      (mapv #(symbol (c/dasherize (:name %))) (:inputs f))))
+
+
+(defn deploy-contract [binary]
+  (->> (cloth/sign-and-send! (tx/create-contract-tx binary {}))
+       (p/mapcat cloth/when-mined)
+       (p/mapcat chain/get-transaction-receipt)
+       (p/mapcat (fn [receipt] (p/resolved (:contract-address receipt))))))
+
+(defn call-contract-fn
+  [fabi contract args]
+  (->> (cloth.chain/call
+         (assoc (cloth.tx/fn-tx contract fabi args)
+           :from (:address (cloth/keypair))))
+       (p/mapcat (fn [val]
+                   ;(println "returned: " val)
+                   (p/resolved (util/decode-return-value fabi val))
+                   ))))
+
+
+(defn create-fn-tx
+  [fn-abi contract args]
+  (cloth.core/sign-and-send!
+    (cloth.tx/fn-tx contract fn-abi args)))
+
+(defn create-fn-and-wait-for-receipt
+  [fn-abi contract args]
+  (->> (create-fn-tx fn-abi contract args)
+       (p/mapcat chain/get-transaction-receipt)))
 
 ;; (<function name>!)
 #?(:clj
@@ -29,7 +60,7 @@
 
      For each function it creates a tx function to create a transaction:
 
-     (add-device-tx \"0x0sdsfafs...\" {})
+     (add-device!! \"0x0sdsfafs...\" {})
 
      "
      [contract file]
@@ -38,16 +69,26 @@
            binary (get-in compiled [:contracts contract-key :bin])
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)
-           deploy-name (str "deploy-" (c/dasherize (name contract)) "!")]
+           deploy-name (symbol (str "deploy-" (c/dasherize (name contract)) "!"))]
+       ;(println "all fns: " (map :name functions))
        `(do
-          (defn ~(symbol deploy-name) []
-            (cloth.core/sign-and-send! (cloth.tx/create-contract-tx ~binary {})))
+          (defn ~deploy-name []
+            (deploy-contract ~binary))
 
           ~@(for [f functions]
               (if (:constant f)
-                `(defn ~(symbol (c/dasherize (:name f))) [contract & args]
-                   (cloth.chain/call (cloth.tx/fn-tx contract ~f args)))
-                `(defn ~(symbol (str (c/dasherize (:name f)) "!")) [contract & args]
-                   (cloth.core/sign-and-send! (cloth.tx/fn-tx contract ~f args)))))))))
+                `(defn ~(symbol (c/dasherize (:name f)))
+                   [contract# & args#]
+                   (call-contract-fn ~f contract# args#))
+                `(do
+                   (defn ~(symbol (str (c/dasherize (:name f)) "!"))
+                       [contract# & args#]
+                       (create-fn-tx ~f contract# args#))
+                   (defn ~(symbol (str (c/dasherize (:name f)) "!!"))
+                     [contract# & args#]
+                     (create-fn-and-wait-for-receipt ~f contract# args#))
+                   (defn ~(symbol (str (c/dasherize (:name f)) "?"))
+                      [contract# & args#]
+                      (call-contract-fn ~f contract# args#)))))))))
 
 

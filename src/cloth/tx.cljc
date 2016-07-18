@@ -50,23 +50,23 @@
 (defn nonce [tx]
   (-> #?(:cljs (.-nonce tx))
       #?(:clj (.getNonce tx))
-      (util/b->int)))
+      (util/b->uint)))
 
 (defn gas-price [tx]
   (->
     #?(:cljs (.-gasPrice tx))
     #?(:clj (.getGasPrice tx))
-    (util/b->int)))
+    (util/b->uint)))
 
 (defn gas-limit [tx]
   (-> #?(:cljs (.-gasLimit tx))
       #?(:clj (.getGasLimit tx))
-      (util/b->int)))
+      (util/b->uint)))
 
 (defn value [tx]
   (-> #?(:cljs (.-value tx))
       #?(:clj (.getValue tx))
-      (util/b->int)))
+      (util/b->uint)))
 
 (defn tx->map [tx]
   (when tx

@@ -17,7 +17,7 @@
 #?(:cljs
    (defn verify-private-key [key]
      (try
-       ((aget secp256k1 "secretKeyVerify") key)
+       ((aget secp256k1 "privateKeyVerify") key)
        (catch js/TypeError e nil))))
 
 (defn create-private-key []

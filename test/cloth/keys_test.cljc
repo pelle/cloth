@@ -8,11 +8,10 @@
    (deftest test-random-bytes
      (is (not= (keys/random-bytes) (keys/random-bytes)))))
 
-
 #?(:cljs
    (deftest test-secp256k
      (is keys/secp256k1)))
-
+;
 #?(:cljs
    (deftest test-verify-private-key
      (is keys/verify-private-key)

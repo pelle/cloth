@@ -15,8 +15,14 @@
    (def BN (aget eth-util "BN")))
 #?(:cljs
    (defn biginteger [buffer]
-     (BN. buffer)))
+     (BN. (or buffer 0))))
 
+#?(:cljs (def max-int (biginteger (aget js/Number "MAX_SAFE_INTEGER"))))
+
+#?(:cljs (defn bn-or-int [bn]
+           (if (.lte bn max-int)
+             (.toNumber bn)
+             bn)))
 #?(:cljs
    (defn ->buffer [val]
      ((aget eth-util "toBuffer") (clj->js val))))
@@ -182,7 +188,7 @@
   [number]
   (let [number (if (nil? number) 0 number)]
     #?(:cljs
-       ((aget eth-util "intToBuffer") number))
+       ((aget eth-util "toUnsigned") (biginteger number)))
     #?(:clj (bn->b (biginteger number)))))
 
 (defn int->hex
@@ -194,7 +200,7 @@
   "Interprets a `Buffer` as a signed integer and returns a `BN` or 'BigInteger. Assumes 256-bit numbers."
   [b]
   #?(:cljs
-     (.toTwos (biginteger b) 256))
+     ((aget eth-util "fromSigned") b))
   #?(:clj (if (and b (not= (count b) 0))
             (BigInteger. b)
             0)))
@@ -203,7 +209,7 @@
   "Interprets a `Buffer` as a unsigned integer and returns a `BN`. Assumes 256-bit numbers."
   [b]
   #?(:cljs
-     (biginteger b))
+     ((aget eth-util "bufferToInt") b))
   #?(:clj (if b (BigInteger. b) 0)))
 
 (defn hex->uint

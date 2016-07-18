@@ -1,14 +1,13 @@
 (ns cloth.util-test
   (:require [cloth.util :as util]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]
-               [cloth.util :refer [biginteger]]]
+               [cloth.util :refer [biginteger ]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
 
 (defn eq
   [a b]
-  (let [b (biginteger b)]
-    #?(:clj  (.equals a b)
-       :cljs (.eq a b))))
+  #?(:clj  (.equals a (biginteger b))
+     :cljs (.eq a (biginteger b))))
 
 (deftest test-add0x
   (is (= (util/add0x "ab0c") "0xab0c"))
@@ -24,18 +23,19 @@
 (deftest test-hex->int
   (is (eq (util/hex->int "0x0") 0))
   (is (eq (util/hex->int "0x00") 0))
-  (is (eq (util/hex->int "0xff00") -256))
+  (is (eq (util/hex->int "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00") -256))
   (is (eq (util/hex->int "0x00ff00") 65280))
   (is (eq (util/hex->int "00") 0))
-  (is (eq (util/hex->int "ff00") -256))
+  (is (eq (util/hex->int "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00") -256))
+  (is (eq (util/hex->int "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") -1))
   (is (eq (util/hex->int "00ff00") 65280)))
 
 (deftest test-hex->uint
-  (is (eq (util/hex->uint "0x0") 0))
-  (is (eq (util/hex->uint "0x00") 0))
-  (is (eq (util/hex->uint "0xff00") 65280))
-  (is (eq (util/hex->uint "00") 0))
-  (is (eq (util/hex->uint "ff00") 65280)))
+  (is (= (util/hex->uint "0x0") 0))
+  (is (= (util/hex->uint "0x00") 0))
+  (is (= (util/hex->uint "0xff00") 65280))
+  (is (= (util/hex->uint "00") 0))
+  (is (= (util/hex->uint "ff00") 65280)))
 
 (deftest test-int->hex
   (is (= (util/int->hex 0) "00"))
@@ -87,10 +87,10 @@
 (deftest decode-solidity-tests
   (is (= (util/decode-solidity :bool "0000000000000000000000000000000000000000000000000000000000000001") true ))
   (is (= (util/decode-solidity :bool  "0000000000000000000000000000000000000000000000000000000000000000") false ))
-  (is (eq (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000001") 1))
-  (is (eq (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000000") 0))
-  (is (eq (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000001") 1))
-  (is (eq (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000000") 0))
+  (is (= (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000001") 1))
+  (is (= (util/decode-solidity :uint8 "0000000000000000000000000000000000000000000000000000000000000000") 0))
+  (is (= (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000001") 1))
+  (is (= (util/decode-solidity :uint32 "0000000000000000000000000000000000000000000000000000000000000000") 0))
 
 
   (is (eq (util/decode-solidity :int8 "0000000000000000000000000000000000000000000000000000000000000001") 1))

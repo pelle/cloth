@@ -60,7 +60,7 @@
 
      For each function it creates a tx function to create a transaction:
 
-     (add-device-tx \"0x0sdsfafs...\" {})
+     (add-device!! \"0x0sdsfafs...\" {})
 
      "
      [contract file]

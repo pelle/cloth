@@ -70,7 +70,7 @@
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)
            deploy-name (symbol (str "deploy-" (c/dasherize (name contract)) "!"))]
-       (println "all fns: " (map :name functions))
+       ;(println "all fns: " (map :name functions))
        `(do
           (defn ~deploy-name []
             (deploy-contract ~binary))

@@ -11,7 +11,6 @@
 (defn create-new-keypair! []
   (reset! core/global-keypair (keys/create-keypair)))
 
-
 #?(:clj
    (deftest compile-solidity-test
      (let [info (c/compile-solidity "test/cloth/SimpleToken.sol")]
@@ -20,20 +19,45 @@
 
 (defcontract simple-token "test/cloth/SimpleToken.sol")
 
+
 (deftest deploy-contract-test
   (create-new-keypair!)
   #?(:cljs
-     (async done
-       (-> (core/faucet! 10000000000)
-           (p/then core/when-mined)
-           (p/then deploy-simple-token!)
-           (p/then (fn [b]
-                     (is (= b 1000000))
-                     (done)))
-           (p/catch (fn [e]
-                      (println "Error: " (prn-str e))
-                      (is (nil? e))
-                      (done)))))
+     (let [recipient (:address (keys/create-keypair))
+           contract (atom nil)]
+       (async done
+         (-> (core/faucet! 10000000000)
+             (p/then core/when-mined)
+             (p/then deploy-simple-token!)
+             (p/then (fn [c] (reset! contract c)))
+             (p/then #(issuer @contract))
+             (p/then (fn [result]
+                       (is (= result (:address (core/keypair))))))
+             (p/then #(circulation @contract))
+             (p/then (fn [result]
+                       (is (= result 0))))
+             (p/then #(issue? @contract recipient 123))
+             (p/then (fn [result]
+                       (is result)))
+
+             (p/then #(customer @contract recipient))
+             (p/then (fn [result]
+                       (is (= result {:authorized-time 0 :balance 0}))))
+
+             (p/then #(issue!! @contract recipient 123))
+             (p/then (fn [result]
+                       (is result)))
+             (p/then #(circulation @contract))
+             (p/then (fn [result]
+                       (is (= result 123))))
+             (p/then #(balances @contract recipient))
+             (p/then (fn [result]
+                       (is (= result 123))))
+             (p/then done)
+             (p/catch (fn [e]
+                        (println "Error: " (prn-str e))
+                        (is (nil? e))
+                        (done))))))
      :clj
      (do @(core/faucet! 10000000000)
          (let [ contract @(deploy-simple-token!)

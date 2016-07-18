@@ -5,7 +5,7 @@
             cloth.keys-test
             cloth.tx-test
             cloth.net-test
-            ;cloth.contracts-test
+            cloth.contracts-test
             ))
 
 (doo-tests
@@ -17,4 +17,3 @@
            'cloth.net-test
            )
 
-;'cloth.contracts-test

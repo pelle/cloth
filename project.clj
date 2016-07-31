@@ -3,7 +3,8 @@
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.9.0-alpha8"]
                  [org.clojure/clojurescript "1.9.93"]
-                 [funcool/cats "1.2.1"]
+                 [org.clojure/core.async "0.2.385"]
+                 [funcool/cats "2.0.0"]
                  [funcool/promesa "1.4.0"]
                  [funcool/httpurr "0.6.1"]
                  [aleph "0.4.1" :scope "provided"]

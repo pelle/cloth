@@ -92,6 +92,10 @@
    (p/then (ethrpc "eth_getBlockByNumber" num full-transactions?)
            rpc->block)))
 
+(defn latest-block []
+  (->> (block-number)
+       (p/mapcat get-block-by-number)))
+
 (defn get-transaction-by-hash
   [hash]
   (p/then (ethrpc "eth_getTransactionByHash" hash)
@@ -171,3 +175,29 @@
   "Returns accounts available in local rpc. Do not use in real code"
   []
   (ethrpc "eth_coinbase"))
+
+(defn filter-changes
+  ([id]
+   (filter-changes identity id))
+  ([formatter id]
+   (p/then (ethrpc "eth_getFilterChanges" id)
+           formatter)))
+
+(defn get-logs
+  ([query]
+   (get-logs identity query))
+  ([formatter query]
+   (p/then (ethrpc "eth_getLogs" query)
+           formatter)))
+
+(defn new-filter
+  [query]
+  (ethrpc "eth_newFilter" query))
+
+(defn new-block-filter
+  []
+  (ethrpc "eth_newBlockFilter"))
+
+(defn uninstall-filter [id]
+  (ethrpc "eth_uninstallFilter" id))
+

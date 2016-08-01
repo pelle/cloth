@@ -2,24 +2,41 @@
   (:require
     [cloth.filters :as filters]
     [promesa.core :as p]
-    [clojure.core.async :as async :refer [>! <! <!! go]]
-    #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]]
+    [cloth.chain :as chain]
+    #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]
+               [cljs.core.async :refer [>! <!]]]
         :clj  [
-    [clojure.test :refer [is are deftest testing use-fixtures]]])
-    [cloth.chain :as chain]))
+    [clojure.test :refer [is are deftest testing use-fixtures]]
+    [clojure.core.async :as async :refer [>! <! <!! go go-loop]]]))
+  #?(:cljs (:require-macros [cljs.core.async.macros :refer [go go-loop]])))
 
 
 
 (deftest new-block-ch-test
   #?(:cljs
      (async done
-       (-> (filters/block-ch)
-           (p/then (fn [r]
-                     (is (re-find #"TestRPC" r))
-                     (done)))
-           (p/catch (fn [e]
-                      (is false (str "Did not return response"))
-                      (done)))))
+       (println "new-block-ch")
+       (p/catch
+         (p/then (filters/new-block-ch)
+                 (fn [{:keys [events stop start]}]
+                   (go
+                     (let [block-hash (<! events)]
+                       (p/catch
+                         (p/then (chain/latest-block)
+                                 (fn [latest]
+                                   (is (= block-hash (:hash latest)))
+                                   (stop)
+                                   (done)))
+                         (fn [e]
+                           (println "error " (prn-str e))
+                           (is (= e nil))
+                           (stop)
+                           (done)))))))
+         (fn [e]
+           (println "error " (prn-str e))
+           (is (= e nil))
+           (stop)
+           (done))))
      :clj
      (let [{:keys [events stop start]} @(filters/new-block-ch)
            block-hash (<!! events)

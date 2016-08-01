@@ -139,7 +139,7 @@ npm install -g ethereumjs-testrpc
 This is a small temporary test ethereum node. Run it:
 
 ```
-testrpc
+testrpc -b 1
 ```
 
 ### Clojure tests

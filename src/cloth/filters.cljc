@@ -1,7 +1,9 @@
 (ns cloth.filters
   (:require [cloth.chain :as chain]
             [promesa.core :as p]
-            [clojure.core.async :as async :refer [>! <! <!! go]]))
+    #?@(:cljs [[cljs.core.async :as async :refer [>! <!]]]
+        :clj  [[clojure.core.async :as async :refer [>! <! <!! go go-loop]]]))
+  #?(:cljs (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])))
 
 (defn filter-ch
   ([id]
@@ -11,7 +13,7 @@
          poll   (atom true)
          speed  5000
          poller (fn []
-                  (async/go-loop []
+                  (go-loop []
                                  (when @poll
                                    (-> (chain/filter-changes formatter id)
                                        (p/then

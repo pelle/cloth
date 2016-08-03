@@ -59,6 +59,14 @@
      :gas-used (util/hex->uint (:gasUsed tx))
      :logs (:logs tx)}))
 
+(defn rpc->event [e]
+  (-> (select-keys e [:address :type :topics :data])
+      (assoc :block-hash (:blockHash e)
+             :tx (:transactionHash e)
+             :log-index (util/hex->uint (:logIndex e))
+             :block-number (util/hex->uint (:blockNumber e))
+             :transaction-index (util/hex->uint (:transactionIndex e)))))
+
 (defn rpc->block [block]
   (if block
     (-> (select-keys block [:hash :miner :uncles])

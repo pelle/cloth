@@ -396,10 +396,16 @@
   [_ val]
   (encode-solidity :bytes val))
 
-(defn encode-fn-name [fname types]
+(defn encode-solidity-call-sig [fname types]
   (-> (str (name fname) "(" (c/join "," (map name types)) ")")
       (sha3)
-      (->hex)
+      (->hex)))
+
+(defn encode-event-sig [fname types]
+  (add0x (encode-solidity-call-sig fname types)))
+
+(defn encode-fn-name [fname types]
+  (-> (encode-solidity-call-sig fname types)
       (c/slice 0 8)))
 
 (defn encode-args [types args]

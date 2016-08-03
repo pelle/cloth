@@ -146,6 +146,10 @@
   (is (= (util/encode-fn-sig "setMessage" [:string] ["Hello"])                         ;setMessage(string)
          "0x368b87720000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000548656c6c6f000000000000000000000000000000000000000000000000000000")))
 
+(deftest encode-event-sig-tests
+  (is (= (util/encode-event-sig "Issued" [:address :uint])
+         "0xc2854a616e539b14ba85c3a25cf07eb16f6f3464be4169e3b125febd05060c6d")))
+
 (deftest decode-solidity-data-tests
   (is (util/decode-solidity-data [:address] "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x00439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
 

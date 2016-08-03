@@ -37,4 +37,4 @@
 
 (defn event-ch [query]
   (p/then (chain/new-filter query)
-          filter-ch))
+          (partial filter-ch #(map chain/rpc->event %))))

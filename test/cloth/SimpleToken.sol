@@ -8,7 +8,7 @@ contract SimpleToken {
   bytes32 public ipfs;
 
   event Issued(address indexed recipient, uint32 amount);
-  event Message(string message);
+  event Message(address indexed shouter, string message);
 
 
   function SimpleToken() {
@@ -46,7 +46,7 @@ contract SimpleToken {
   function setMessage(string _message)
     public returns(string message) {
         message = _message;
-        Message(message);
+        Message(msg.sender,message);
         return message;
   }
 

@@ -4,9 +4,11 @@
             [promesa.core :as p]
             [cloth.chain :as chain]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]
-               [cloth.contracts :as c :refer-macros [defcontract]]]
+               [cloth.contracts :as c :refer-macros [defcontract]]
+               [cljs.core.async :refer [>! <!]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]
-               [cloth.contracts :as c :refer [defcontract] ]])))
+               [cloth.contracts :as c :refer [defcontract] ]
+               [clojure.core.async :as async :refer [>! <! <!! go go-loop]]])))
 
 (defn create-new-keypair! []
   (reset! core/global-keypair (keys/create-keypair)))
@@ -68,9 +70,11 @@
             (is (= @(issue? contract recipient 123) true))
             (is (= @(customer contract recipient) {:authorized-time 0 :balance 0}))
             (is (= @(message contract) ""))
-            (let [tx @(set-message!! contract "Hello")]
-              ;(prn tx)
-              (is (= @(message contract) "Hello")))
+            (let [{:keys [events stop start] :as c} @(message-ch contract)
+                  tx @(set-message!! contract "Hello")
+                  event (<!! events)]
+              (stop)
+              (is (= event {:message "Hello" :shouter (:address (core/keypair))})))
 
             (let [ tx @(issue!! contract recipient 123)]
               (is tx)
@@ -81,7 +85,6 @@
                              (p/mapcat core/when-mined))
                     authtime @(authorized contract recipient)]
                 (is tx)
-
                 (is (= @(circulation contract) 123))
                 (is (= @(balances contract recipient) 123))
                 (is (= @(customer contract recipient) {:authorized-time authtime :balance 123}))))

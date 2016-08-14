@@ -19,6 +19,7 @@
             [lein-cljsbuild "1.1.3"]
             [lein-figwheel "0.5.4-7"]
             [lein-doo "0.1.7"]
+            [lein-codox "0.9.5"]
             [lein-ancient "0.6.10"]
             [lein-externs "0.1.5"]]
   :npm {:dependencies [[ethereumjs-tx "1.1.1"]]}

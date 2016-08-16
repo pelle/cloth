@@ -6,6 +6,7 @@
             cloth.tx-test
             cloth.net-test
             cloth.contracts-test
+            cloth.filters-test
             ))
 
 (doo-tests
@@ -15,5 +16,6 @@
            'cloth.keys-test
            'cloth.tx-test
            'cloth.net-test
+           'cloth.filters-test
            )
 

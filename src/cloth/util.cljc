@@ -272,7 +272,6 @@
 (defn dynamic-type? [type]
   (re-find #"^(bytes|string|.*\[\])$" (name type)))
 
-;; TODO move these to utils
 (defmulti decode-solidity extract-type)
 
 (defmethod decode-solidity :default
@@ -282,7 +281,7 @@
 
 (defmethod decode-solidity :address
   [_ v]
-  (add0x (c/slice v 24)))
+  (add0x (c/slice v -40)))
 
 (defmethod decode-solidity :uint
   [_ v]
@@ -396,10 +395,16 @@
   [_ val]
   (encode-solidity :bytes val))
 
-(defn encode-fn-name [fname types]
+(defn encode-solidity-call-sig [fname types]
   (-> (str (name fname) "(" (c/join "," (map name types)) ")")
       (sha3)
-      (->hex)
+      (->hex)))
+
+(defn encode-event-sig [fname types]
+  (add0x (encode-solidity-call-sig fname types)))
+
+(defn encode-fn-name [fname types]
+  (-> (encode-solidity-call-sig fname types)
       (c/slice 0 8)))
 
 (defn encode-args [types args]
@@ -435,21 +440,25 @@
                       data-size)
           data-size (/ data-size 4)
           start (if (dynamic-type? type)
-                  256 0)
+                  64 0)
+          chunk (c/slice data start (+ start data-size))
           ]
-      (cons (decode-solidity type (c/slice data start data-size))
-            (lazy-seq (decode-solidity-data (rest types) (c/slice data data-size))))))
-  )
+      ;(prn {:type type :data-size data-size :start start :chunk chunk})
+      (cons (decode-solidity type chunk)
+            (lazy-seq (decode-solidity-data (rest types) (c/slice data data-size)))))))
 
 (defn decode-return-value
-  [fabi data]
-  (let [outputs (decode-solidity-data (map :type (:outputs fabi)) (strip0x data))
-        outputs (if (< (count outputs) 2)
-                  (first outputs)
-                  (apply merge
-                         (map
-                           (fn [n v] {(keyword (c/dasherize n)) v})
-                           (map :name (:outputs fabi))
-                           outputs)))]
-    outputs))
+  ([output-abi data]
+    (decode-return-value output-abi data true))
+  ([output-abi data single-item-if-possible?]
+   (let [outputs (decode-solidity-data (map :type output-abi) (strip0x data))
+         outputs (if (and (< (count outputs) 2)
+                          single-item-if-possible?)
+                   (first outputs)
+                   (apply merge
+                          (map
+                            (fn [n v] {(keyword (c/dasherize (name n))) v})
+                            (map :name output-abi)
+                            outputs)))]
+     outputs)))
 

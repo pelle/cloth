@@ -4,10 +4,12 @@
     [cloth.tx :as tx]
     [cloth.util :as util]
     [cloth.chain :as chain]
+    [cloth.filters :as filters]
     [promesa.core :as p]
     [cuerdas.core :as c]
     #?@(:clj
         [
+    [clojure.core.async :as async]
     [clojure.java.shell :as shell]
     [cheshire.core :as json]])
     [cloth.util :as util]))
@@ -35,7 +37,7 @@
            :from (:address (cloth/keypair))))
        (p/mapcat (fn [val]
                    ;(println "returned: " val)
-                   (p/resolved (util/decode-return-value fabi val))
+                   (p/resolved (util/decode-return-value (:outputs fabi) val))
                    ))))
 
 
@@ -48,6 +50,13 @@
   [fn-abi contract args]
   (->> (create-fn-tx fn-abi contract args)
        (p/mapcat chain/get-transaction-receipt)))
+
+(defn contract-event
+  [fn-abi contract args]
+  (let [parser (filters/event-parser (:inputs fn-abi))]
+    (filters/event-ch {:address contract
+                       :topics [(util/encode-event-sig (:name fn-abi) (map :type (:inputs fn-abi)))]
+                       :parser parser})))
 
 ;; (<function name>!)
 #?(:clj
@@ -69,8 +78,8 @@
            binary (get-in compiled [:contracts contract-key :bin])
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)
+           events (filter #(= (:type %) "event") abi)
            deploy-name (symbol (str "deploy-" (c/dasherize (name contract)) "!"))]
-       ;(println "all fns: " (map :name functions))
        `(do
           (defn ~deploy-name []
             (deploy-contract ~binary))
@@ -82,13 +91,21 @@
                    (call-contract-fn ~f contract# args#))
                 `(do
                    (defn ~(symbol (str (c/dasherize (:name f)) "!"))
-                       [contract# & args#]
-                       (create-fn-tx ~f contract# args#))
+                     [contract# & args#]
+                     (create-fn-tx ~f contract# args#))
                    (defn ~(symbol (str (c/dasherize (:name f)) "!!"))
                      [contract# & args#]
                      (create-fn-and-wait-for-receipt ~f contract# args#))
                    (defn ~(symbol (str (c/dasherize (:name f)) "?"))
-                      [contract# & args#]
-                      (call-contract-fn ~f contract# args#)))))))))
+                     [contract# & args#]
+                     (call-contract-fn ~f contract# args#)))))
+
+          ~@(for [e events]
+              (do
+                `(defn ~(symbol (str (c/dasherize (:name e)) "-ch"))
+                   [contract# & args#]
+                   (contract-event ~e contract# args#))))
+
+          ))))
 
 

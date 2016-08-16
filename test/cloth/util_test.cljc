@@ -2,7 +2,8 @@
   (:require [cloth.util :as util]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]
                [cloth.util :refer [biginteger ]]]
-        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
+        :clj  [
+            [clojure.test :refer [is are deftest testing use-fixtures]]])))
 
 (defn eq
   [a b]
@@ -105,7 +106,8 @@
   (is (= (util/decode-solidity :string "000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000")
          "hello"))
   (is (= (util/decode-solidity :string "00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000") " " ))
-  (is (= (util/decode-solidity :address "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x00439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
+  (is (= (util/decode-solidity :address "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
+  (is (= (util/decode-solidity :address "0x000000000000000000000000e7b9ef10c866154176cce5ac06de663c85319abb") "0xe7b9ef10c866154176cce5ac06de663c85319abb"))
   )
 
 #?(:clj
@@ -146,6 +148,10 @@
   (is (= (util/encode-fn-sig "setMessage" [:string] ["Hello"])                         ;setMessage(string)
          "0x368b87720000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000548656c6c6f000000000000000000000000000000000000000000000000000000")))
 
+(deftest encode-event-sig-tests
+  (is (= (util/encode-event-sig "Issued" [:address :uint])
+         "0xc2854a616e539b14ba85c3a25cf07eb16f6f3464be4169e3b125febd05060c6d")))
+
 (deftest decode-solidity-data-tests
-  (is (util/decode-solidity-data [:address] "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x00439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
+  (is (util/decode-solidity-data [:address] "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
 

@@ -59,6 +59,14 @@
      :gas-used (util/hex->uint (:gasUsed tx))
      :logs (:logs tx)}))
 
+(defn rpc->event [e]
+  (-> (select-keys e [:address :type :topics :data])
+      (assoc :block-hash (:blockHash e)
+             :tx (:transactionHash e)
+             :log-index (util/hex->uint (:logIndex e))
+             :block-number (util/hex->uint (:blockNumber e))
+             :transaction-index (util/hex->uint (:transactionIndex e)))))
+
 (defn rpc->block [block]
   (if block
     (-> (select-keys block [:hash :miner :uncles])
@@ -91,6 +99,10 @@
   ([num full-transactions?]
    (p/then (ethrpc "eth_getBlockByNumber" num full-transactions?)
            rpc->block)))
+
+(defn latest-block []
+  (->> (block-number)
+       (p/mapcat get-block-by-number)))
 
 (defn get-transaction-by-hash
   [hash]
@@ -171,3 +183,29 @@
   "Returns accounts available in local rpc. Do not use in real code"
   []
   (ethrpc "eth_coinbase"))
+
+(defn filter-changes
+  ([id]
+   (filter-changes identity id))
+  ([formatter id]
+   (p/then (ethrpc "eth_getFilterChanges" id)
+           formatter)))
+
+(defn get-logs
+  ([query]
+   (get-logs identity query))
+  ([formatter query]
+   (p/then (ethrpc "eth_getLogs" query)
+           formatter)))
+
+(defn new-filter
+  [query]
+  (ethrpc "eth_newFilter" query))
+
+(defn new-block-filter
+  []
+  (ethrpc "eth_newBlockFilter"))
+
+(defn uninstall-filter [id]
+  (ethrpc "eth_uninstallFilter" id))
+

@@ -106,6 +106,18 @@ The `cloth.contracts` namespace allows you to compile solidity code and create c
 ;; Check return value of a transaction function but doesn't actually create a transaction
 @(issue? contract recipient 123)
 
+;; Events in a solidity contract have a function created to create a core.async channel
+;; Use regular promesa syntax here as this is likely to be done in a web interface
+(require '[promesa.core :as p])
+
+(defonce latest-message (atom nil))
+(p/then (message-ch contract)
+        (fn [{:keys [messages stop start] :as c}] 
+            ; messages is a core.async channel
+            ; stop is used to stop listening and start to restart it
+          (go  (reset! latest-message (<! messages))
+               (stop))
+
 ```
 
 Note `defcontract` creates the functions in the namespace where it is called. 
@@ -139,7 +151,7 @@ npm install -g ethereumjs-testrpc
 This is a small temporary test ethereum node. Run it:
 
 ```
-testrpc
+testrpc -b 1
 ```
 
 ### Clojure tests

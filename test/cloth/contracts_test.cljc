@@ -4,9 +4,14 @@
             [promesa.core :as p]
             [cloth.chain :as chain]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]
-               [cloth.contracts :as c :refer-macros [defcontract]]]
+               [cloth.contracts :as c]
+               [cljs.core.async :refer [>! <!]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]
-               [cloth.contracts :as c :refer [defcontract] ]])))
+               [cloth.contracts :as c :refer [defcontract]]
+               [clojure.core.async :as async :refer [>! <! <!! go go-loop]]]))
+  #?(:cljs (:require-macros
+             [cljs.core.async.macros :refer [go go-loop]]
+             [cloth.contracts :as c])))
 
 (defn create-new-keypair! []
   (reset! core/global-keypair (keys/create-keypair)))
@@ -17,8 +22,7 @@
        (is (= (keys info) '(:contracts :version))))
      ))
 
-(defcontract simple-token "test/cloth/SimpleToken.sol")
-
+(c/defcontract simple-token "test/cloth/SimpleToken.sol")
 
 (deftest deploy-contract-test
   (create-new-keypair!)
@@ -39,7 +43,6 @@
              (p/then #(issue? @contract recipient 123))
              (p/then (fn [result]
                        (is result)))
-
              (p/then #(customer @contract recipient))
              (p/then (fn [result]
                        (is (= result {:authorized-time 0 :balance 0}))))
@@ -53,10 +56,17 @@
              (p/then #(balances @contract recipient))
              (p/then (fn [result]
                        (is (= result 123))))
-             (p/then done)
+             (p/then #(message-ch @contract))
+             (p/then (fn [{:keys [events stop start] :as c}]
+                       (p/then (set-message!! @contract "Hello")
+                               #(go
+                                 (let [event (<! events)]
+                                   (stop)
+                                   (is (= event {:message "Hello" :shouter (:address (core/keypair))}))
+                                   (done))))))
              (p/catch (fn [e]
                         (println "Error: " (prn-str e))
-                        (is (nil? e))
+                        (prn (.-stack e))
                         (done))))))
      :clj
      (do @(core/faucet! 10000000000)
@@ -68,9 +78,11 @@
             (is (= @(issue? contract recipient 123) true))
             (is (= @(customer contract recipient) {:authorized-time 0 :balance 0}))
             (is (= @(message contract) ""))
-            (let [tx @(set-message!! contract "Hello")]
-              ;(prn tx)
-              (is (= @(message contract) "Hello")))
+            (let [{:keys [events stop start] :as c} @(message-ch contract)
+                  tx @(set-message!! contract "Hello")
+                  event (<!! events)]
+              (stop)
+              (is (= event {:message "Hello" :shouter (:address (core/keypair))})))
 
             (let [ tx @(issue!! contract recipient 123)]
               (is tx)
@@ -81,9 +93,7 @@
                              (p/mapcat core/when-mined))
                     authtime @(authorized contract recipient)]
                 (is tx)
-
                 (is (= @(circulation contract) 123))
                 (is (= @(balances contract recipient) 123))
                 (is (= @(customer contract recipient) {:authorized-time authtime :balance 123}))))
-
            ))))

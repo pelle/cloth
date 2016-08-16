@@ -1,9 +1,10 @@
-(defproject cloth "0.2.5"
+(defproject cloth "0.2.6"
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.9.0-alpha8"]
                  [org.clojure/clojurescript "1.9.93"]
-                 [funcool/cats "1.2.1"]
+                 [org.clojure/core.async "0.2.385"]
+                 [funcool/cats "2.0.0"]
                  [funcool/promesa "1.4.0"]
                  [funcool/httpurr "0.6.1"]
                  [aleph "0.4.1" :scope "provided"]
@@ -18,6 +19,7 @@
             [lein-cljsbuild "1.1.3"]
             [lein-figwheel "0.5.4-7"]
             [lein-doo "0.1.7"]
+            [lein-codox "0.9.5"]
             [lein-ancient "0.6.10"]
             [lein-externs "0.1.5"]]
   :npm {:dependencies [[ethereumjs-tx "1.1.1"]]}

@@ -10,8 +10,7 @@
         :clj  [
     [clojure.test :refer [is are deftest testing use-fixtures]]
     [clojure.core.async :as async :refer [>! <! <!! go go-loop]]
-    [cloth.contracts :refer [defcontract]]])
-
+    [cloth.contracts :as c]])
     [cloth.util :as util])
   #?(:cljs (:require-macros
              [cljs.core.async.macros :refer [go go-loop]]

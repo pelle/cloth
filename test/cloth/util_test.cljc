@@ -72,7 +72,8 @@
   (is (= (util/encode-solidity :int32 0) "0000000000000000000000000000000000000000000000000000000000000000"))
 
   (is (= (util/encode-solidity :int32 -1) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
-  (is (= (util/encode-solidity :int32 -16772216) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388"))
+  (is (= (util/encode-solidity :int32 -16772216)                                      "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388"))
+  (is (= (util/encode-solidity :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd") "0000000000000000000000002036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))
 
 
   (is (= (util/encode-solidity :bytes32 "0x0000000000000000000000000000000000000000000000000000000000000001") "0000000000000000000000000000000000000000000000000000000000000001"))
@@ -123,6 +124,7 @@
   (is (= (util/decode-solidity :string "00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000") " " ))
   (is (= (util/decode-solidity :address "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
   (is (= (util/decode-solidity :address "0x000000000000000000000000e7b9ef10c866154176cce5ac06de663c85319abb") "0xe7b9ef10c866154176cce5ac06de663c85319abb"))
+  (is (= (util/decode-solidity :address (util/encode-solidity :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd")) "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))
   )
 
 #?(:clj
@@ -168,5 +170,16 @@
          "0xc2854a616e539b14ba85c3a25cf07eb16f6f3464be4169e3b125febd05060c6d")))
 
 (deftest decode-solidity-data-tests
-  (is (util/decode-solidity-data [:address] "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
+  (is (= (util/decode-solidity-data [:address :address] "000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec0000000000000000000000002036c6cd85692f0fb2c26e6c6b2eced9e4478dfd") '("0x439c6d36fbdefbcc93d4c4b773511f566b7efbec" "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))))
 
+(deftest url-encode-tests
+  (is (= (util/url-encode "") ""))
+  (is (= (util/url-encode nil) nil))
+  (is (= (util/url-encode "abcd") "abcd"))
+  (is (= (util/url-encode {}) nil))
+  (is (= (util/url-encode "hello there") "hello+there"))
+  (is (= (util/url-encode "hello there/you%guys") "hello+there%2Fyou%25guys"))
+  (is (= (util/url-encode "transfer(address 0x439c6d36fbdefbcc93d4c4b773511f566b7efbec, uint 123)") "transfer%28address+0x439c6d36fbdefbcc93d4c4b773511f566b7efbec%2C+uint+123%29"))
+  (is (= (util/url-encode {:name "John Smith" :amount 1232}) "name=John+Smith&amount=1232"))
+
+  )

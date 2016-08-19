@@ -14,6 +14,22 @@
                     (util/add0x (val %2)))
           {} params))
 
+(defn map->url [params]
+  (if (:to params)
+    (let [to (:to params)
+          params (select-keys params [:value :data :function :label :gas-limit :callback_url])
+          params (if (:function params)
+                   (dissoc params :data)
+                   params)
+          params (if (:data params)
+                   (assoc (dissoc params :data) :bytecode (:data params))
+                   params)
+          params (if (:gas-limit params)
+                   (assoc (dissoc params :gas-limit) :gas (:gas-limit params))
+                   params)
+          query-string (util/url-encode params)]
+      (str "ethereum:" to (if query-string (str "?" query-string))))))
+
 (defn create [params]
   #?(:cljs
      (Tx. (clj->js (map->tx params))))

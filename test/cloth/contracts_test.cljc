@@ -14,7 +14,7 @@
              [cloth.contracts :as c])))
 
 (defn create-new-keypair! []
-  (reset! core/global-keypair (keys/create-keypair)))
+  (reset! core/global-signer (keys/create-keypair)))
 
 #?(:clj
    (deftest compile-solidity-test
@@ -36,7 +36,7 @@
              (p/then (fn [c] (reset! contract c)))
              (p/then #(issuer @contract))
              (p/then (fn [result]
-                       (is (= result (:address (core/keypair))))))
+                       (is (= result (:address (core/current-signer))))))
              (p/then #(circulation @contract))
              (p/then (fn [result]
                        (is (= result 0))))
@@ -62,7 +62,7 @@
                                #(go
                                  (let [event (<! events)]
                                    (stop)
-                                   (is (= event {:message "Hello" :shouter (:address (core/keypair))}))
+                                   (is (= event {:message "Hello" :shouter (:address (core/current-signer))}))
                                    (done))))))
              (p/catch (fn [e]
                         (println "Error: " (prn-str e))
@@ -73,7 +73,7 @@
          (let [ contract @(deploy-simple-token!)
                 recipient (:address (keys/create-keypair))]
             (is contract)
-            (is (= @(issuer contract) (:address (core/keypair))))
+            (is (= @(issuer contract) (:address (core/current-signer))))
             (is (= @(circulation contract) 0))
             (is (= @(issue? contract recipient 123) true))
             (is (= @(customer contract recipient) {:authorized-time 0 :balance 0}))
@@ -82,7 +82,7 @@
                   tx @(set-message!! contract "Hello")
                   event (<!! events)]
               (stop)
-              (is (= event {:message "Hello" :shouter (:address (core/keypair))})))
+              (is (= event {:message "Hello" :shouter (:address (core/current-signer))})))
 
             (let [ tx @(issue!! contract recipient 123)]
               (is tx)

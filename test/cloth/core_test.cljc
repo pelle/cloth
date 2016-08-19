@@ -8,18 +8,18 @@
 
 
 (defn create-new-keypair! []
-  (reset! core/global-keypair (keys/create-keypair)))
+  (reset! core/global-signer (keys/create-keypair)))
 
 (deftest test-keypair
-  (reset! core/global-keypair nil)
-  (is (= (core/keypair) nil))
+  (reset! core/global-signer nil)
+  (is (= (core/current-signer) nil))
   (let [gl (keys/create-keypair)
         lo (keys/create-keypair)]
-    (reset! core/global-keypair gl)
-    (is (= (core/keypair) gl))
-    (binding [core/bound-keypair lo]
-      (is (= (core/keypair) lo)))
-    (reset! core/global-keypair nil)))
+    (reset! core/global-signer gl)
+    (is (= (core/current-signer) gl))
+    (binding [core/bound-signer lo]
+      (is (= (core/current-signer) lo)))
+    (reset! core/global-signer nil)))
 
 (deftest balance-test
   (create-new-keypair!)
@@ -100,7 +100,7 @@
                 (p/mapcat
                   (fn [tx]
                     (is tx)
-                    (is (= (:from tx) (:address (core/keypair))))
+                    (is (= (:from tx) (:address (core/current-signer))))
                     (is (= (:to tx) recipient))
                     (is (= (:value tx) 100000))
                     (done))))
@@ -112,7 +112,7 @@
        (let [_ @(core/faucet! 10000000000)
              tx @(core/sign-and-send! {:to recipient :value 12340000})]
          (is tx)
-         (is (= (:from tx) (:address (core/keypair))))
+         (is (= (:from tx) (:address (core/current-signer))))
          (is (= (:to tx) recipient))
          (is (= (:value tx) 12340000))
          (is (= @(chain/get-balance recipient) 12340000))))))

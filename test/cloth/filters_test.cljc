@@ -17,7 +17,7 @@
              [cloth.contracts :as c])))
 
 (defn create-new-keypair! []
-  (reset! core/global-keypair (keys/create-keypair)))
+  (reset! core/global-signer (keys/create-keypair)))
 
 (deftest new-block-ch-test
   #?(:cljs

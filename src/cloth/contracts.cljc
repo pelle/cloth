@@ -37,7 +37,7 @@
   [fabi contract args]
   (->> (cloth.chain/call
          (assoc (cloth.tx/fn-tx contract fabi args)
-           :from (:address (cloth/keypair))))
+           :from (:address (cloth/current-signer))))
        (p/mapcat (fn [val]
                    ;(println "returned: " val)
                    (p/resolved (util/decode-return-value (:outputs fabi) val))

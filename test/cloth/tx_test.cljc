@@ -39,6 +39,17 @@
   (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :gas-limit 200000}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?gas=200000"))
   (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :value 200000123N :label "Bob Smith"}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?label=Bob%20Smith&value=200000123")))
 
+
+(deftest url->map-test
+  (is (= (tx/url->map nil) nil))
+  (is (= (tx/url->map "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd") {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"}))
+  (is (= (tx/url->map "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?bytecode=0x00") {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :data "0x00"}))
+  (is (= (tx/url->map "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?function=hello%28address%200x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd%29")
+         {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :data "0x84fae7600000000000000000000000002036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :function "hello(address 0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd)"}))
+  (is (= (tx/url->map "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?gas=200000") {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :gas-limit 200000}))
+  (is (= (tx/url->map "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?label=Bob%20Smith&value=200000123") {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :value 200000123N :label "Bob Smith"})))
+
+
 (deftest sign-test
   (let [private (keys/get-private-key kp)
         signed (-> (tx/create {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"

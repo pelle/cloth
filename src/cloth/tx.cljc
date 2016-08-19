@@ -1,6 +1,7 @@
 (ns cloth.tx
   (:require #?@(:cljs [ethereumjs-tx])
             [cloth.util :as util]
+            [clojure.walk :refer [keywordize-keys]]
             [cloth.keys :as keys]
             [cuerdas.core :as c]
             [cemerick.url :as url])
@@ -30,6 +31,35 @@
                    params)
           query-string (url/map->query params)]
       (str "ethereum:" to (if query-string (str "?" query-string))))))
+
+(defn function-param->fnsig
+  "Converts a function parameter of format name(type param, type param) into an solidity function encoding
+
+  This is not at all complete and is primarily intended for testing simple use cases. It will likely break with even the simplest use case"
+  [data]
+  (if-let [[_ name args] (re-find #"([^\(]+)\((.*)\)$" data)]
+    (let [ args (map c/split (c/split args #"\s?,\s?"))
+          types (map #(keyword (first %)) args)
+          args  (map last args)]
+      (util/encode-fn-sig name types args))))
+
+(defn url->map [url]
+  (if-let [ result (and url (re-find #"ethereum:(0x[0-9a-f]*)(\?(.*))?" url))]
+    (let [params (keywordize-keys (merge {:to (get result 1)} (url/query->map (get result 3))))
+          params (if (:bytecode params)
+                   (assoc (dissoc params :bytecode) :data (:bytecode params))
+                   params)
+          params (if (:function params)
+                   (assoc params :data (function-param->fnsig (:function params)))
+                   params)
+          params (if (:gas params)
+                   (assoc (dissoc params :gas) :gas-limit (util/parse-int (:gas params)))
+                   params)
+          params (if (:value params)
+                   (assoc params :value (util/parse-int (:value params)))
+                   params)]
+      params
+      )))
 
 (defn create [params]
   #?(:cljs

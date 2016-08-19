@@ -4,7 +4,9 @@
             [promesa.core :as p]
             [cloth.chain :as chain]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]]
-        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
+        :clj  [
+            [clojure.test :refer [is are deftest testing use-fixtures]]])
+            [cloth.tx :as tx]))
 
 
 (defn create-new-keypair! []
@@ -116,3 +118,34 @@
          (is (= (:to tx) recipient))
          (is (= (:value tx) 12340000))
          (is (= @(chain/get-balance recipient) 12340000))))))
+
+(deftest sign-with-signer-url-test
+  (let [keypair (keys/create-keypair)]
+    (reset! core/global-signer {:address  (:address keypair)
+                                :type     :url
+                                :show-url (fn [url] (core/sign-and-send! (tx/url->map url) keypair))})
+    (let [recipient (:address (keys/create-keypair))]
+      #?(:cljs
+         (async done
+           (p/catch
+             (->> (core/faucet! 10000000000)
+                  (p/mapcat (fn [_] (core/sign-and-send! {:to recipient :value 100000})))
+                  (p/mapcat
+                    (fn [tx]
+                      (is tx)
+                      (is (= (:from tx) (:address (core/current-signer))))
+                      (is (= (:to tx) recipient))
+                      (is (= (:value tx) 100000))
+                      (done))))
+             (fn [e]
+               (println "Error: " (prn-str e))
+               (is (nil? e))
+               (done))))
+         :clj
+         (let [_ @(core/faucet! 10000000000)
+               tx @(core/sign-and-send! {:to recipient :value 12340000})]
+           (is tx)
+           (is (= (:from tx) (:address (core/current-signer))))
+           (is (= (:to tx) recipient))
+           (is (= (:value tx) 12340000))
+           (is (= @(chain/get-balance recipient) 12340000)))))))

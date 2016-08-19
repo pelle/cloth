@@ -86,7 +86,12 @@
   (prn (tx/tx->map tx))
   tx)
 
-(defmulti sign-with-signer! (fn [t signer] (:type signer)))
+(defmulti sign-with-signer!
+          "Signs a given transaction map using a given signer and returns a promise that will return a tx hash.
+
+           The `:type` attribute of the signer map dispatches to given implementation."
+          (fn [_ signer] (:type signer)))
+
 (defmethod sign-with-signer! :default
   [t signer]
   (->>
@@ -97,6 +102,10 @@
            ;spytx
            (tx/->hex)
            (chain/send-raw-transaction)))))
+
+;; The :url signer requires a function in :show-url which receives an ethereum url. This can be presented to a user together with an optional callback method
+(defmethod sign-with-signer! :url [t {:keys [show-url]}]
+  (show-url (tx/map->url t)))
 
 (defn sign-and-send!
   ([t]

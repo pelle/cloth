@@ -2,10 +2,10 @@
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.9.0-alpha8"]
-                 [org.clojure/clojurescript "1.9.93"]
+                 [org.clojure/clojurescript "1.9.225"]
                  [org.clojure/core.async "0.2.385"]
                  [funcool/cats "2.0.0"]
-                 [funcool/promesa "1.4.0"]
+                 [funcool/promesa "1.5.0"]
                  [funcool/httpurr "0.6.1"]
                  [aleph "0.4.1" :scope "provided"]
                  [funcool/cuerdas "0.8.0"]

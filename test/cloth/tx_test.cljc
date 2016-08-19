@@ -30,10 +30,14 @@
   (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))
   (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :nonce 1231}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))
   (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :data "0x00"}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?bytecode=0x00"))
-  (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :data "0x00" :function "hello(address 0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd)"})
-         "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?function=hello%28address+0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd%29"))
+
+  #?(:clj (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :data "0x00" :function "hello(address 0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd)"})
+                 "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?function=hello%28address%200x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd%29"))
+     :cljs (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :data "0x00" :function "hello(address 0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd)"})
+                  "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?function=hello(address%200x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd)")))
+
   (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :gas-limit 200000}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?gas=200000"))
-  (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :value 200000123N :label "Bob Smith"}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?value=200000123&label=Bob+Smith")))
+  (is (= (tx/map->url {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :value 200000123N :label "Bob Smith"}) "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?label=Bob%20Smith&value=200000123")))
 
 (deftest sign-test
   (let [private (keys/get-private-key kp)

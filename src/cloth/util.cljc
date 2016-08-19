@@ -5,8 +5,7 @@
      (:import
        [org.spongycastle.util.encoders Hex]
        [org.spongycastle.util BigIntegers]
-       [org.ethereum.crypto HashUtil]
-       [java.net URLEncoder])))
+       [org.ethereum.crypto HashUtil])))
 
 #?(:cljs
    (def eth-util js/ethUtil))
@@ -44,20 +43,6 @@
                   (byte-array 1)
                   ba)]
          (Hex/toHexString ba)))))
-
-(defn url-encode
-  "Encodes either a string, symbol, number or map into a format usable in a url query"
-  [data]
-  (if data
-    (if (map? data)
-      (if-not (empty? data)
-        (c/join "&" (map (fn [[k v]]
-                           (str (url-encode k) "=" (url-encode v))) data)))
-      (let [data (if (number? data)
-                   (str data)
-                   (name data))]
-        #?(:cljs (js/encodeURIComponent data)
-           :clj  (URLEncoder/encode data "UTF-8"))))))
 
 (defn add0x [input]
   (if (string? input)

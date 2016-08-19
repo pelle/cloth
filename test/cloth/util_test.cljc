@@ -171,15 +171,3 @@
 
 (deftest decode-solidity-data-tests
   (is (= (util/decode-solidity-data [:address :address] "000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec0000000000000000000000002036c6cd85692f0fb2c26e6c6b2eced9e4478dfd") '("0x439c6d36fbdefbcc93d4c4b773511f566b7efbec" "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))))
-
-(deftest url-encode-tests
-  (is (= (util/url-encode "") ""))
-  (is (= (util/url-encode nil) nil))
-  (is (= (util/url-encode "abcd") "abcd"))
-  (is (= (util/url-encode {}) nil))
-  (is (= (util/url-encode "hello there") "hello+there"))
-  (is (= (util/url-encode "hello there/you%guys") "hello+there%2Fyou%25guys"))
-  (is (= (util/url-encode "transfer(address 0x439c6d36fbdefbcc93d4c4b773511f566b7efbec, uint 123)") "transfer%28address+0x439c6d36fbdefbcc93d4c4b773511f566b7efbec%2C+uint+123%29"))
-  (is (= (util/url-encode {:name "John Smith" :amount 1232}) "name=John+Smith&amount=1232"))
-
-  )

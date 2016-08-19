@@ -2,7 +2,8 @@
   (:require #?@(:cljs [ethereumjs-tx])
             [cloth.util :as util]
             [cloth.keys :as keys]
-            [cuerdas.core :as c])
+            [cuerdas.core :as c]
+            [cemerick.url :as url])
   #?(:clj (:import [org.ethereum.core Transaction])))
 
 #?(:cljs
@@ -27,7 +28,7 @@
           params (if (:gas-limit params)
                    (assoc (dissoc params :gas-limit) :gas (:gas-limit params))
                    params)
-          query-string (util/url-encode params)]
+          query-string (url/map->query params)]
       (str "ethereum:" to (if query-string (str "?" query-string))))))
 
 (defn create [params]

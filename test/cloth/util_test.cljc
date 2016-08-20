@@ -165,6 +165,21 @@
   (is (= (util/encode-fn-sig "setMessage" [:string] ["Hello"])                         ;setMessage(string)
          "0x368b87720000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000548656c6c6f000000000000000000000000000000000000000000000000000000")))
 
+(deftest encode-fn-param-tests
+  ; Eamples from https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
+  (is (= (util/encode-fn-param "baz" [:uint32 :bool] [69 true])                         ;baz(uint32 x, bool y)
+         "baz(uint32 69,bool true)"))
+
+
+  (is (= (util/encode-fn-param "sam" [:bytes :bool "uint256[]"] ["dave" true [1,2,3]])                         ;sam(bytes name, bool z, uint[] data)
+         "sam(bytes \"dave\",bool true,uint256[] [1,2,3])"))
+
+  (is (= (util/encode-fn-param "f" [:uint256 "uint32[]" :bytes10 :bytes] [291M [1110M 1929M] "1234567890" "Hello, world!"])                         ;f(uint,uint32[],bytes10,bytes)
+         "f(uint256 291,uint32[] [1110,1929],bytes10 1234567890,bytes \"Hello, world!\")"))
+
+  (is (= (util/encode-fn-param "setMessage" [:string] ["Hello"])                         ;setMessage(string)
+         "setMessage(string \"Hello\")")))
+
 (deftest encode-event-sig-tests
   (is (= (util/encode-event-sig "Issued" [:address :uint])
          "0xc2854a616e539b14ba85c3a25cf07eb16f6f3464be4169e3b125febd05060c6d")))

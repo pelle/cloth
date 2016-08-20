@@ -1,11 +1,12 @@
 (ns cloth.tx
   (:require #?@(:cljs [ethereumjs-tx])
-            [cloth.util :as util]
-            [clojure.walk :refer [keywordize-keys]]
-            [cloth.keys :as keys]
-            [cuerdas.core :as c]
-            [cemerick.url :as url])
-  #?(:clj (:import [org.ethereum.core Transaction])))
+    [cloth.util :as util]
+    [clojure.walk :refer [keywordize-keys]]
+    [cloth.keys :as keys]
+    [cuerdas.core :as c]
+    [cemerick.url :as url])
+  #?(:clj
+     (:import [org.ethereum.core Transaction])))
 
 #?(:cljs
    (def Tx js/EthTx))
@@ -13,7 +14,9 @@
 
 (defn map->tx [params]
   (reduce #(assoc % (keyword (c/camelize (name (key %2))))
-                    (util/add0x (val %2)))
+                    (if (= (key %2) :function)
+                      (val %2)
+                      (util/add0x (val %2))))
           {} params))
 
 (defn map->url [params]
@@ -38,13 +41,13 @@
   This is not at all complete and is primarily intended for testing simple use cases. It will likely break with even the simplest use case"
   [data]
   (if-let [[_ name args] (re-find #"([^\(]+)\((.*)\)$" data)]
-    (let [ args (map c/split (c/split args #"\s?,\s?"))
+    (let [args (map c/split (c/split args #"\s?,\s?"))
           types (map #(keyword (first %)) args)
-          args  (map last args)]
+          args (map last args)]
       (util/encode-fn-sig name types args))))
 
 (defn url->map [url]
-  (if-let [ result (and url (re-find #"ethereum:(0x[0-9a-f]*)(\?(.*))?" url))]
+  (if-let [result (and url (re-find #"ethereum:(0x[0-9a-f]*)(\?(.*))?" url))]
     (let [params (keywordize-keys (merge {:to (get result 1)} (url/query->map (get result 3))))
           params (if (:bytecode params)
                    (assoc (dissoc params :bytecode) :data (:bytecode params))
@@ -67,11 +70,11 @@
   #?(:clj
      (let [{:keys [to value nonce gas-price gas-limit data] :as tx} params]
        (Transaction. (if nonce (util/int->b nonce))
-                      (if gas-price (util/int->b gas-price))
-                      (if gas-limit (util/int->b gas-limit))
-                      (if to (util/hex-> to))
-                      (if value (util/int->b value))
-                      (if data (util/hex-> data))))))
+                     (if gas-price (util/int->b gas-price))
+                     (if gas-limit (util/int->b gas-limit))
+                     (if to (util/hex-> to))
+                     (if value (util/int->b value))
+                     (if data (util/hex-> data))))))
 
 (defn recipient [tx]
   (->
@@ -162,6 +165,7 @@
   ([contract name types args params]
    (-> params
        (assoc :data (util/encode-fn-sig name types args)
+              :function (util/encode-fn-param name types args)
               :to contract)
        (map->tx))))
 

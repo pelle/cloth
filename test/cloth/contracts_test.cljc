@@ -6,9 +6,11 @@
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]
                [cloth.contracts :as c]
                [cljs.core.async :refer [>! <!]]]
-        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]
-               [cloth.contracts :as c :refer [defcontract]]
-               [clojure.core.async :as async :refer [>! <! <!! go go-loop]]]))
+        :clj  [
+            [clojure.test :refer [is are deftest testing use-fixtures]]
+            [cloth.contracts :as c :refer [defcontract]]
+            [clojure.core.async :as async :refer [>! <! <!! go go-loop]]])
+            [cloth.tx :as tx])
   #?(:cljs (:require-macros
              [cljs.core.async.macros :refer [go go-loop]]
              [cloth.contracts :as c])))
@@ -71,7 +73,8 @@
      :clj
      (do @(core/faucet! 10000000000)
          (let [ contract @(deploy-simple-token!)
-                recipient (:address (keys/create-keypair))]
+                recipient-kp (keys/create-keypair)
+                recipient (:address recipient-kp) ]
             (is contract)
             (is (= @(issuer contract) (:address (core/current-signer))))
             (is (= @(circulation contract) 0))
@@ -96,4 +99,18 @@
                 (is (= @(circulation contract) 123))
                 (is (= @(balances contract recipient) 123))
                 (is (= @(customer contract recipient) {:authorized-time authtime :balance 123}))))
+
+            (reset! core/global-signer {:address  recipient
+                                        :type     :url
+                                        :show-url (fn [url]
+                                                    ;(println url)
+                                                    (core/sign-and-send! (tx/url->map url) recipient-kp))})
+            @(core/faucet! 10000000000)
+            (let [other-user (:address (keys/create-keypair))
+                  {:keys [events stop start] :as c} @(transferred-ch contract)
+                  tx @(transfer!! contract other-user 11)
+                  event (<!! events)]
+              (stop)
+              (is (= event {:sender recipient :recipient other-user :amount 11})))
+
            ))))

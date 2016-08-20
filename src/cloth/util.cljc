@@ -429,9 +429,33 @@
           {:count 0 :head "" :tail ""} (map vector types args))]
     (str head tail)))
 
-(defn encode-fn-sig [name types args]
-  (add0x (str (encode-fn-name name types)
+(defn encode-fn-sig
+  "Encode function for use in a data field"
+  [fname types args]
+  (add0x (str (encode-fn-name fname types)
                    (encode-args types args))))
+
+(defmulti prn-solidity-value (fn [type _] type))
+(defmethod prn-solidity-value :default
+  [_ val]
+  (if (vector? val)
+    (str "[" (c/join "," (map str val)) "]")
+    val))
+(defmethod prn-solidity-value :string
+  [_ val] (str "\"" val "\""))
+(defmethod prn-solidity-value :bytes
+  [_ val]
+  (if (string? val)
+    (if (re-find #"^0x[0-9a-f]*$" val)
+      val
+      (prn-solidity-value :string val))
+    (->hex val)))
+
+
+(defn encode-fn-param
+  "Encode function for use in ethereum uri function param"
+  [fname types args]
+  (str fname "(" (c/join "," (map #(str (name %) " " (prn-solidity-value % %2)) types args)) ")"))
 
 (defn decode-solidity-data [types data]
   (if (or (empty? data) (empty? types))

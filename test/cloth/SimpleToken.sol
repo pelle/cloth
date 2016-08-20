@@ -9,7 +9,7 @@ contract SimpleToken {
 
   event Issued(address indexed recipient, uint32 amount);
   event Message(address indexed shouter, string message);
-
+  event Transferred(address indexed sender, address indexed recipient, uint32 amount);
 
   function SimpleToken() {
     issuer = msg.sender;
@@ -50,14 +50,14 @@ contract SimpleToken {
         return message;
   }
 
-//  function transfer(address recipient, uint amount) public
-//    authorizedCustomer(msg.sender)
-//    sufficientFunds(amount)
-//    returns(bool success) {
-//    balances[msg.sender] -= amount;
-//    balances[recipient] += amount;
-//    Transfered(recipient, amount);
-//    return true;
-//  }
-//
+  function transfer(address recipient, uint32 amount) public
+    authorizedCustomer(msg.sender)
+    sufficientFunds(amount)
+    returns(bool success) {
+    balances[msg.sender] -= amount;
+    balances[recipient] += amount;
+    Transferred(msg.sender, recipient, amount);
+    return true;
+  }
+
 }

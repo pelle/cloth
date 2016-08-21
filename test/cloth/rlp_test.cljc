@@ -28,6 +28,7 @@
          true
          (do (println "Decoding: " (prn-str (normalized data)))
              (println "  actual: " (prn-str (normalized result)))
+             (println "     rlp: " (->hex encoded))
              false)))       )
 
 (deftest encode-tests
@@ -51,4 +52,5 @@
          (is (decoded? (byte-array [0x0f])))
          (is (decoded? (byte-array [0x04 0x00])))
          (is (decoded? [[], [[]], [[], [[]]]] ))
+         (is (decoded? (mapv util/int->b (range 60))))
          (is (decoded? (.getBytes "Lorem ipsum dolor sit amet, consectetur adipisicing elit"))))

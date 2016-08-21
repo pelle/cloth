@@ -44,7 +44,7 @@
                        [readed data] (spec/read (buf/bytes (util/b->int size)) buff (+ (inc pos)
                                                                                                 size-size))]
                       [(+ 1 size-size readed) data])
-                 :else (throw "Unexpected data passed to rlp-bytearray reader"))))
+                 :else (throw (ex-info "Unexpected data passed to rlp-bytearray reader" {})))))
     (write [_ buff pos data]
            (cond
              (and (= 1 (alength data))
@@ -57,7 +57,7 @@
              (let [size (util/int->b (alength data))
                    ;; I know awesome name
                    size-size (spec/size* rlp-bytes size)]
-                  (+ (spec/write (buf/byte) buff pos (unchecked-byte (+ 0xb7 size-size)))
+                  (+ (spec/write (buf/ubyte) buff pos (unchecked-byte (+ 0xb7 size-size)))
                      (spec/write (buf/bytes size-size) buff (inc pos) size)
                      (spec/write (buf/bytes (alength data)) buff (+ 1 size-size pos) data)))
              ))))
@@ -84,14 +84,33 @@
                               (let [[readed part] (spec/read rlp buff pos)]
                                    (recur (+ size readed) (+ pos readed) (conj data part)))
                               [size data])))
+
+                 (let [size-size (- f 0xf7)
+                       [_ sizeb] (spec/read (buf/bytes size-size) buff (inc pos))
+                       total-size (util/b->int sizeb)]
+                      (loop [size (inc size-size) pos (+ pos (inc size-size)) data []]
+                            (if (< size total-size)
+                              (let [[readed part] (spec/read rlp buff pos)]
+                                   (recur (+ size readed) (+ pos readed) (conj data part)))
+                              [size data])))
+
                  )))
     (write [_ buff pos data]
            (let [size (spec/size* rlp data)]
                 (if (<= size 55)
                   (do (spec/write (buf/byte) buff pos (unchecked-byte (dec (+ 0xc0 size))))
                       (reduce #(spec/write rlp buff (inc %1) %2) pos data))
-                  (throw "Currently only supports lists up to 55 direct elements") ;; TODO Implement for larger lists
+                  (let [sizeb (util/int->b size)
+                        ;; I know awesome name
+                        size-size (spec/size* rlp-bytes sizeb)]
+                       (+ (spec/write (buf/ubyte) buff pos (unchecked-byte (+ 0xf7 size-size)))
+                          (spec/write (buf/bytes size-size) buff (inc pos) sizeb)
+                          (reduce (fn [current-size part]
+                                      (+ current-size (spec/write rlp buff current-size part)))
+                                  (+ size-size (inc pos))
+                                  data)))
                   )))))
+
 
 (def rlp
       (reify

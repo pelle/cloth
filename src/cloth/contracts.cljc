@@ -18,8 +18,8 @@
 #?(:clj
    (defn compile-solidity [file]
      (let [result (shell/sh "solc" "--combined-json" "abi,bin" file)]
-       (if (= (:exit result) 0)
-         (throw (ex-info (:err result) {:solidity file}))
+       (if (not (c/blank? (:err result)))
+         (throw (ex-info (:err result) {:solidity file :exit (:exit result)}))
          (json/parse-string (:out result) true)))))
 
 #?(:clj

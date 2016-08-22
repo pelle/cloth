@@ -8,18 +8,41 @@
 (defn ba->buf
   "Convert a byte array into an octet buffer"
   [ba]
-      (let [buff (buf/allocate (alength ba))]
-           (.put buff ba)))
+      #?(:cljs (.-buffer (.from js/Uint8Array ba))
+         :clj (let [length (alength ba)
+                    buff (buf/allocate length)]
+                   (.put buff ba)
+                   buff)
+         ))
 
 (defn buf->ba [buff]
-  (.array buff))
+      #?(:cljs
+               (let [ba (.from util/Buffer buff)]
+                    (println "buf->ba")
+                    (prn buff)
+                    (prn ba)
+                    (println (util/->hex ba))
+                    ba)
+         :clj  (.array buff)))
+
+#?(:cljs
+   (defn bytes? [a]
+         (println "bytes?: " a)
+         (and (aget a "constructor")
+              (aget (.-constructor a) "isBuffer")
+              (.isBuffer (aget a "constructor") a))))
 
 (declare rlp)
+
+(defn spy [stuff]
+      (prn stuff)
+      stuff)
 
 (def rlp-bytes
   (reify
     spec/ISpecDynamicSize
     (size* [_ data]
+           (println "rlp-bytes size*")
            (cond
              (and (= 1 (alength data))
                   (< (aget data 0) 0x7f))
@@ -46,13 +69,17 @@
                       [(+ 1 size-size readed) data])
                  :else (throw (ex-info "Unexpected data passed to rlp-bytearray reader" {})))))
     (write [_ buff pos data]
+           (println "rlp-bytes write")
+           (println "length: " (alength data))
            (cond
              (and (= 1 (alength data))
                   (< (unchecked-byte (aget data 0)) (unchecked-byte 0x7f)))
-              (spec/write (buf/byte) buff pos (aget data 0))
+             (do (println "Single byte: " (aget data 0))
+               (spec/write (buf/ubyte) buff pos (aget data 0)))
              (<= (alength data) 55)
-              (+ (spec/write (buf/byte) buff pos (unchecked-byte (+ 0x80 (alength data))))
-                 (spec/write (buf/bytes (alength data)) buff (inc pos) data))
+             (do (println "short bytes: " data)
+               (+ (spec/write (buf/ubyte) buff pos (unchecked-byte (+ 0x80 (alength data))))
+                  (spec/write (buf/bytes (alength data)) buff (inc pos) data)))
              :else
              (let [size (util/int->b (alength data))
                    ;; I know awesome name
@@ -66,6 +93,7 @@
   (reify
     spec/ISpecDynamicSize
     (size* [_ data]
+           (println "rlp-list size*")
            (let [size (reduce + (map (partial spec/size* rlp) data))]
                 (cond
                   (<= size 55)
@@ -116,6 +144,7 @@
       (reify
         spec/ISpecDynamicSize
         (size* [_ data]
+               (println "rlp size* " data)
                (if (bytes? data)
                  (spec/size* rlp-bytes data)
                  (spec/size* rlp-list data)))
@@ -126,12 +155,15 @@
                      (spec/read rlp-bytes buff pos)
                      (spec/read rlp-list buff pos))))
         (write [_ buff pos data]
+               (println "rlp write")
+
                (if (bytes? data)
                  (spec/write rlp-bytes buff pos data)
                  (spec/write rlp-list buff pos data)))))
 
 (defn encode
       "Encodes an nested vector of byte array/buffers" [ data ]
+      (println "encode: " data)
       (buf->ba (buf/into rlp data)))
 
 (defn decode

@@ -62,7 +62,7 @@
                        :parser parser})))
 
 (defn fn-doc [ fn-abi]
-      (let [fncall (str (:name fn-abi) "(" (c/join ", " (map #(str (:type %) " " (:name %)) (:inputs fn-abi))) ")")
+      (let [fncall (str (:name fn-abi) "(" (c/join ", " (map #(str (:type %) " " (:name % (:type %))) (:inputs fn-abi))) ")")
             const (if (:constant fn-abi) " constant")
             returns (if (not (empty? (:outputs fn-abi)))
                       (str " returns(" (c/join ", " (map #(str (:type %) (if (:name %) (str " " (:name %)))) (:outputs fn-abi))) ")"))
@@ -85,7 +85,7 @@
      "
      [contract file]
      (let [compiled (compile-solidity file)
-           contract-key (first (keys (:contracts compiled))) ;(c/capitalize (c/camelize (name contract)))
+           contract-key (keyword (c/capitalize (c/camelize (name contract))))
            binary (get-in compiled [:contracts contract-key :bin])
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)

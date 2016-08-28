@@ -377,6 +377,13 @@
       (pad 32)
       (->hex)))
 
+(defn ->ba [val]
+       (if (string? val)
+         (if (re-find #"^0x([0-9a-f]*)$" val)
+           (hex-> val)
+           (.getBytes val))
+         val))
+
 (defmethod encode-solidity :bytes
   [type val]
   #?(:cljs

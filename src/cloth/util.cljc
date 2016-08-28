@@ -374,6 +374,13 @@
       (pad 32)
       (->hex)))
 
+(defn ->ba [val]
+       (if (string? val)
+         (if (re-find #"^0x([0-9a-f]*)$" val)
+           (hex-> val)
+           (.getBytes val))
+         val))
+
 (defmethod encode-solidity :bytes
   [type val]
   #?(:cljs
@@ -384,7 +391,7 @@
            (str (solidity-uint 256 size)
                 (->hex (rpad buffer (storage-length size))))))))
   #?(:clj
-     (let [buffer (.getBytes val)]
+     (let [buffer (->ba val)]
        (if-let [size (extract-size type)]
          (->hex (rpad buffer size))
          (let [size (count buffer)]

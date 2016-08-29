@@ -17,7 +17,10 @@
 
 #?(:clj
    (defn compile-solidity [file]
-     (json/parse-string (:out (shell/sh "solc" "--combined-json" "abi,bin" file)) true)))
+     (let [result (shell/sh "solc" "--combined-json" "abi,bin" file)]
+       (if (not (c/blank? (:err result)))
+         (throw (ex-info (:err result) {:solidity file :exit (:exit result)}))
+         (json/parse-string (:out result) true)))))
 
 #?(:clj
    (defn abi->args [f]
@@ -58,6 +61,14 @@
                        :topics [(util/encode-event-sig (:name fn-abi) (map :type (:inputs fn-abi)))]
                        :parser parser})))
 
+(defn fn-doc [ fn-abi]
+      (let [fncall (str (:name fn-abi) "(" (c/join ", " (map #(str (:type %) " " (:name % (:type %))) (:inputs fn-abi))) ")")
+            const (if (:constant fn-abi) " constant")
+            returns (if (not (empty? (:outputs fn-abi)))
+                      (str " returns(" (c/join ", " (map #(str (:type %) (if (:name %) (str " " (:name %)))) (:outputs fn-abi))) ")"))
+            ]
+           (str fncall const returns)))
+
 ;; (<function name>!)
 #?(:clj
    (defmacro defcontract
@@ -74,7 +85,7 @@
      "
      [contract file]
      (let [compiled (compile-solidity file)
-           contract-key (first (keys (:contracts compiled))) ;(c/capitalize (c/camelize (name contract)))
+           contract-key (keyword (c/capitalize (c/camelize (name contract))))
            binary (get-in compiled [:contracts contract-key :bin])
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)
@@ -87,22 +98,33 @@
           ~@(for [f functions]
               (if (:constant f)
                 `(defn ~(symbol (c/dasherize (:name f)))
+                       ~(str
+                          "Calls "
+                          (fn-doc f)
+                          " without creating a transaction\nReturns a promise will return function return value")
                    [contract# & args#]
                    (call-contract-fn ~f contract# args#))
                 `(do
                    (defn ~(symbol (str (c/dasherize (:name f)) "!"))
+                         ~(str "Calls " (fn-doc f) " and submit it as a transaction\nReturns a promise which will return the tx hash")
                      [contract# & args#]
                      (create-fn-tx ~f contract# args#))
                    (defn ~(symbol (str (c/dasherize (:name f)) "!!"))
+                         ~(str "Calls " (fn-doc f) " and submit it as a transaction.\nReturns a promise which will return the tx receipt once it has mined")
                      [contract# & args#]
                      (create-fn-and-wait-for-receipt ~f contract# args#))
                    (defn ~(symbol (str (c/dasherize (:name f)) "?"))
+                         ~(str "Calls " (fn-doc f) " without creating a transaction. Returns a promise which will return function return value")
                      [contract# & args#]
                      (call-contract-fn ~f contract# args#)))))
 
           ~@(for [e events]
               (do
                 `(defn ~(symbol (str (c/dasherize (:name e)) "-ch"))
+                       ~(str
+                           "Listen to event "
+                           (fn-doc e)
+                           "\nReturns a promise will return a map containing:\n :events a core.async channel\n :stop a function that stops listening to event.")
                    [contract# & args#]
                    (contract-event ~e contract# args#))))
 

@@ -81,11 +81,14 @@
 (defn hex0x [buffer]
   (add0x (->hex buffer)))
 
-#?(:clj
-   (defn ->b [b]
-     (if (string? b)
-       (.getBytes b)
-       b)))
+(defn ->b [val]
+  (if (string? val)
+    (if (re-find #"^0x([0-9a-f]*)$" val)
+      (hex-> val)
+      #?(:clj (.getBytes val)
+         :cljs (Buffer. val)))
+    val))
+
 
 (defn sha3 [data]
   #?(:cljs
@@ -115,6 +118,7 @@
    (defn generate-contract-address
      [from nonce]
      ((aget eth-util "generateAddress") from nonce)))
+
 
 (defn zeros
   "Returns a buffer or byte-array filled with 0s"
@@ -374,24 +378,17 @@
       (pad 32)
       (->hex)))
 
-(defn ->ba [val]
-       (if (string? val)
-         (if (re-find #"^0x([0-9a-f]*)$" val)
-           (hex-> val)
-           (.getBytes val))
-         val))
-
 (defmethod encode-solidity :bytes
   [type val]
   #?(:cljs
-     (let [buffer (Buffer. val)]
+     (let [buffer (->b val)]
        (if-let [size (extract-size type)]
          (->hex (rpad buffer size))
          (let [size (.-length buffer)]
            (str (solidity-uint 256 size)
                 (->hex (rpad buffer (storage-length size))))))))
   #?(:clj
-     (let [buffer (->ba val)]
+     (let [buffer (->b val)]
        (if-let [size (extract-size type)]
          (->hex (rpad buffer size))
          (let [size (count buffer)]

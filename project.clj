@@ -25,8 +25,7 @@
             [lein-ancient "0.6.10"]
             [lein-externs "0.1.5"]]
   :npm {:dependencies [[ethereumjs-tx "1.1.1"]]}
-  :profiles {:dev {:plugins [                               ;[lein-auto "0.1.2"]
-                             [com.jakemccrary/lein-test-refresh "0.16.0"]]}}
+  :profiles {:dev {:plugins [[lein-auto "0.1.2"]]}}
   :cljsbuild
   {:builds {:dev      {:source-paths ["src"]
                        :figwheel     true
@@ -47,7 +46,7 @@
   :doo {:build "test"}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release" "target"]
-  :auto {:default {:file-pattern #"\.(clj|cljs|cljx|edn|sol)$"}
+  :auto {:default {:file-pattern #"\.(clj|cljs|cljc|cljx|edn|sol)$"}
          :paths [ "src" "test"]}
   ;; Home of ethereumj
   :repositories [["oss.jfrog.org" "http://dl.bintray.com/ethereum/maven"]])

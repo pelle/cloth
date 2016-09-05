@@ -78,6 +78,7 @@
             (is contract)
             (is (= @(issuer contract) (:address (core/current-signer))))
             (is (= @(circulation contract) 0))
+            (is (= @(get-customers contract) []))
             (is (= @(issue? contract recipient 123) true))
             (is (= @(customer contract recipient) {:authorized-time 0 :balance 0}))
             (is (= @(message contract) ""))
@@ -98,6 +99,7 @@
                 (is tx)
                 (is (= @(circulation contract) 123))
                 (is (= @(balances contract recipient) 123))
+                (is (= @(get-customers contract) [recipient]))
                 (is (= @(customer contract recipient) {:authorized-time authtime :balance 123}))))
 
             (reset! core/global-signer {:address  recipient

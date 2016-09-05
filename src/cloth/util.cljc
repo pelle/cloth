@@ -268,9 +268,13 @@
   #?(:cljs (js/parseInt s))
   #?(:clj (Integer. s)))
 
-(defn extract-size [type]
+(defmulti extract-size identity)
+
+(defmethod extract-size :default [type]
   (when-let [size (re-find #"\d+" (name type))]
     (storage-length (parse-int size))))
+(defmethod extract-size :address [type]
+  32)
 
 (defn dynamic-type? [type]
   (re-find #"^(bytes|string|.*\[\])$" (name type)))
@@ -279,8 +283,27 @@
 
 (defmethod decode-solidity :default
   [t v]
-  (println "received " t "= " v)
+  (println "decoding unsupported solidity return value " t "= " v)
   v)
+
+(defmethod decode-solidity :fixed-array
+  [type values]
+  ;; This will only work at the moment where all the elements of the array are the same size
+  (let [[_ type array-length] (re-find #"(.*)\[(\d+)\]" type)
+        size (extract-size type)
+        pattern (re-pattern (str ".{" (* 2 size) "}"))]
+    (mapv (partial decode-solidity type) (re-seq pattern values))))
+
+(defmethod decode-solidity :dynamic-array
+  [type value]
+  ;; This will only work at the moment where all the elements of the array are the same size
+  (let [[_ type] (re-find #"(.*)\[]" type)
+        type (keyword type)
+        array-length (decode-solidity :uint (c/slice value 0 64))
+        data (c/slice value 64)
+        size (extract-size type)
+        pattern (re-pattern (str ".{" (* 2 size) "}"))]
+    (mapv (partial decode-solidity type) (re-seq pattern data))))
 
 (defmethod decode-solidity :address
   [_ v]

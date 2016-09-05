@@ -1,7 +1,7 @@
 contract SimpleToken {
   uint32 public circulation;
   address public issuer;
-//  address[] public members;
+  address[] public customers;
   mapping (address => uint32) public balances;
   mapping (address => uint) public authorized;
   string public message;
@@ -30,6 +30,7 @@ contract SimpleToken {
     unAuthorizedCustomer(customer)
     returns(bool success) {
         authorized[customer] = block.timestamp;
+        customers.push(customer);
         return true;
   }
 
@@ -38,7 +39,6 @@ contract SimpleToken {
     returns(bool success) {
         circulation = amount;
         balances[recipient] = amount;
-//      members.push(recipient);
         Issued(recipient, amount);
         return true;
   }
@@ -48,6 +48,10 @@ contract SimpleToken {
         message = _message;
         Message(msg.sender,message);
         return message;
+  }
+
+  function getCustomers() constant returns(address[]) {
+    return customers;
   }
 
   function transfer(address recipient, uint32 amount) public

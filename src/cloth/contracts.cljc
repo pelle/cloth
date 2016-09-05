@@ -24,7 +24,7 @@
 
 #?(:clj
    (defn abi->args [f]
-     (mapv #(symbol (c/dasherize (:name %))) (:inputs f))))
+     (mapv #(symbol (c/kebab (:name %))) (:inputs f))))
 
 
 (defn deploy-contract [binary]
@@ -85,19 +85,19 @@
      "
      [contract file]
      (let [compiled (compile-solidity file)
-           contract-key (keyword (c/capitalize (c/camelize (name contract))))
+           contract-key (keyword (c/capitalize (c/camel (name contract))))
            binary (get-in compiled [:contracts contract-key :bin])
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)
            events (filter #(= (:type %) "event") abi)
-           deploy-name (symbol (str "deploy-" (c/dasherize (name contract)) "!"))]
+           deploy-name (symbol (str "deploy-" (c/kebab (name contract)) "!"))]
        `(do
           (defn ~deploy-name []
             (deploy-contract ~binary))
 
           ~@(for [f functions]
               (if (:constant f)
-                `(defn ~(symbol (c/dasherize (:name f)))
+                `(defn ~(symbol (c/kebab (:name f)))
                        ~(str
                           "Calls "
                           (fn-doc f)
@@ -105,22 +105,22 @@
                    [contract# & args#]
                    (call-contract-fn ~f contract# args#))
                 `(do
-                   (defn ~(symbol (str (c/dasherize (:name f)) "!"))
+                   (defn ~(symbol (str (c/kebab (:name f)) "!"))
                          ~(str "Calls " (fn-doc f) " and submit it as a transaction\nReturns a promise which will return the tx hash")
                      [contract# & args#]
                      (create-fn-tx ~f contract# args#))
-                   (defn ~(symbol (str (c/dasherize (:name f)) "!!"))
+                   (defn ~(symbol (str (c/kebab (:name f)) "!!"))
                          ~(str "Calls " (fn-doc f) " and submit it as a transaction.\nReturns a promise which will return the tx receipt once it has mined")
                      [contract# & args#]
                      (create-fn-and-wait-for-receipt ~f contract# args#))
-                   (defn ~(symbol (str (c/dasherize (:name f)) "?"))
+                   (defn ~(symbol (str (c/kebab (:name f)) "?"))
                          ~(str "Calls " (fn-doc f) " without creating a transaction. Returns a promise which will return function return value")
                      [contract# & args#]
                      (call-contract-fn ~f contract# args#)))))
 
           ~@(for [e events]
               (do
-                `(defn ~(symbol (str (c/dasherize (:name e)) "-ch"))
+                `(defn ~(symbol (str (c/kebab (:name e)) "-ch"))
                        ~(str
                            "Listen to event "
                            (fn-doc e)

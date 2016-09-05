@@ -13,7 +13,7 @@
 
 
 (defn map->tx [params]
-  (reduce #(assoc % (keyword (c/camelize (name (key %2))))
+  (reduce #(assoc % (keyword (c/camel (name (key %2))))
                     (if (= (key %2) :function)
                       (val %2)
                       (util/add0x (val %2))))

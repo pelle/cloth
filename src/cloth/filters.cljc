@@ -51,6 +51,6 @@
     (fn [event]
       (apply merge
              (conj (map (fn [i d]
-                          {(keyword (c/dasherize (name (:name i)))) (util/decode-solidity (:type i) d)})
+                          {(keyword (c/kebab (name (:name i)))) (util/decode-solidity (:type i) d)})
                         indexed (rest (:topics event)))
                    (util/decode-return-value other (:data event) false))))))

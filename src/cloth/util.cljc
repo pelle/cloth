@@ -507,7 +507,7 @@
                    (first outputs)
                    (apply merge
                           (map
-                            (fn [n v] {(keyword (c/dasherize (name n))) v})
+                            (fn [n v] {(keyword (c/kebab (name n))) v})
                             (map :name output-abi)
                             outputs)))]
      outputs)))

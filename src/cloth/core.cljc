@@ -107,11 +107,20 @@
 (defmethod sign-with-signer! :url [t {:keys [show-url]}]
   (show-url (tx/map->url t)))
 
+;; Wraps a transaction in forward transaction being sent to a proxy contract
+(defmethod sign-with-signer! :proxy [t {:keys [address device]}]
+  (sign-with-signer! (assoc t
+                       :to address
+                       :value 0
+                       :data (util/encode-fn-sig "forward"
+                                                 [:address :uint256 :bytes]
+                                                 [(:to t) (:value t 0) (:data t (util/hex-> ""))]))
+                     device))
+
 (defn sign-and-send!
   ([t]
    (sign-and-send! t (current-signer)))
   ([t signer]
    (->> (sign-with-signer! t signer)
         (p/mapcat when-mined))))
-
 

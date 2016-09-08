@@ -268,7 +268,7 @@
   #?(:cljs (js/parseInt s))
   #?(:clj (Integer. s)))
 
-(defmulti extract-size identity)
+(defmulti extract-size keyword)
 
 (defmethod extract-size :default [type]
   (when-let [size (re-find #"\d+" (name type))]

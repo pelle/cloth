@@ -1,11 +1,10 @@
 (ns cloth.net
   (:require [promesa.core :as p]
+            [httpurr.status :as s]
     #?@(:cljs [[httpurr.client.xhr :as http]])
     #?@(:clj [[httpurr.client.aleph :as http]
               [cheshire.core :as json]
               [byte-streams :as bytes]])))
-
-
 
 (defn parse-json [d]
   #?(:cljs (js->clj (js/JSON.parse d) :keywordize-keys true))
@@ -34,31 +33,18 @@
     (ex-info "json-rpc-error" error)
     (get-in response [:body :result])))
 
+(defn process-response
+  [response]
+  (condp = (:status response)
+    s/ok           (p/promise response)
+    s/not-found    (p/rejected :not-found)
+    s/unauthorized (p/rejected :unauthorized)))
+
 (defn rpc [endpoint method & params]
   (-> (http/post endpoint
                  (-> {:body (json-rpc-payload method params)}
                      json-encode
                      (assoc-in [:headers "Content-Type"] "application/json")))
+      ;(p/then process-response)
       (p/then json-decode)
       (p/then json-rpc-response)))
-
-(def ipfs-url "http://localhost:5001/api/v0/")
-
-(defn ipfs-get
-  "Returns the data associated with the given ipfs hash"
-  [hash]
-  (when hash
-    (-> (http/get (str ipfs-url "cat/" hash))
-        (p/then #(:body %)))))
-
-
-(comment
-  ;; Assuming ipfs is running locally with CORS set up
-  ;; ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
-  ;; ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "GET", "POST"]'
-  ;; ipfs config --json API.HTTPHeaders.Access-Control-Allow-Credentials '["true"]'
-  ;; ipfs daemon
-  (p/then (ipfs-get "Qmf9qwT8eNeLGk41RfLfJJ7q8W891QkqDwVWV7aiqoVBxr"
-                    #(println "response: " (prn-str %)))))
-
-

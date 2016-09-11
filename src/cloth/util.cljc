@@ -52,7 +52,7 @@
     input))
 
 (defn strip0x [input]
-  (if (re-find #"^0x" input)
+  (if (and (string? input) (re-find #"^0x" input))
     (c/slice input 2)
     input))
 

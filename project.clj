@@ -12,6 +12,7 @@
                  [org.ethereum/ethereumj-core "1.2.0-RELEASE"]
                  [clj-time "0.12.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
+                 [byte-streams "0.2.2"]
                  [com.cemerick/url "0.1.1"]
                  ;[cljsjs/bignumber "2.1.4-1"]
 

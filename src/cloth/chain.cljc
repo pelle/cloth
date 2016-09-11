@@ -42,7 +42,7 @@
     (-> (select-keys tx [:from :to :hash :input])
         (assoc :value (util/hex->uint (:value tx))
                :block-hash (:blockHash tx)
-               :block-number (util/hex->uint (:blockNumber tx))
+               :block-number (and (:blockNumber tx) (util/hex->uint (:blockNumber tx)))
                :nonce (util/hex->uint (:nonce tx))
                :gas (util/hex->uint (:gas tx))
                :gas-price (util/hex->uint (:gasPrice tx))

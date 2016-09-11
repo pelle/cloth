@@ -28,7 +28,7 @@
    (->> (chain/get-transaction-by-hash (:hash tx-hash tx-hash))
        (p/mapcat
          (fn [tx]
-           (if (:block-hash tx)
+           (if (:block-number tx)
              (p/promise tx)
              (if (= attempts 0)
                (p/rejected (ex-info (str "tx was not mined " tx-hash) {:tx tx}))

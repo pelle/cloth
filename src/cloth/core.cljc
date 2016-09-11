@@ -11,7 +11,7 @@
 ;; In a browser we will typically only use one keypair
 (def ^:dynamic bound-signer nil)
 (defonce global-signer (atom nil))
-
+(defonce tx-poll-rate  (atom 15000))
 (defn current-signer []
   (or bound-signer @global-signer))
 
@@ -22,7 +22,7 @@
 
 (defn when-mined
   "Given a transaction hash it polls every 5 seconds to see if it's mined"
-  ([tx-hash] (when-mined tx-hash 3))
+  ([tx-hash] (when-mined tx-hash 60))
   ([tx-hash attempts]
    ;(println "tx " tx-hash " " attempts)
    (->> (chain/get-transaction-by-hash (:hash tx-hash tx-hash))
@@ -33,7 +33,7 @@
              (if (= attempts 0)
                (p/rejected (ex-info (str "tx was not mined " tx-hash) {:tx tx}))
                (do
-                 (-> (p/delay 5000 tx-hash)
+                 (-> (p/delay @tx-poll-rate tx-hash)
                      (p/then (fn [s]
                                (when-mined tx-hash (dec attempts)))))))))))))
 

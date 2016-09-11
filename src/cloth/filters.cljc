@@ -1,6 +1,7 @@
 (ns cloth.filters
   (:require [cloth.chain :as chain]
             [promesa.core :as p]
+            [cloth.core :as cloth]
     #?@(:cljs [[cljs.core.async :as async :refer [>! <!]]]
         :clj  [
             [clojure.core.async :as async :refer [>! <! <!! go go-loop]]])
@@ -14,7 +15,7 @@
   ([formatter id]
    (let [events (async/chan (async/sliding-buffer 100))
          poll   (atom true)
-         speed  5000
+         speed  @cloth/tx-poll-rate
          poller (fn []
                   (go-loop []
                                  (when @poll

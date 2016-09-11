@@ -1,6 +1,7 @@
 (ns cloth.contracts-test
   (:require [cloth.core :as core]
             [cloth.keys :as keys]
+            [cloth.test-helpers]
             [promesa.core :as p]
             [cloth.chain :as chain]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]

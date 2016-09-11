@@ -2,7 +2,7 @@
   (:require [cloth.core :as core]
             [cloth.keys :as keys]
             [promesa.core :as p]
-
+            [cloth.test-helpers]
             [cloth.chain :as chain]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]]
         :clj  [

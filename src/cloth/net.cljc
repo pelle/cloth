@@ -29,6 +29,7 @@
       payload)))
 
 (defn json-rpc-response [response]
+  ;(prn (:body response))
   (if-let [error (get-in response [:body :error])]
     (ex-info "json-rpc-error" error)
     (get-in response [:body :result])))
@@ -41,6 +42,8 @@
     s/unauthorized (p/rejected :unauthorized)))
 
 (defn rpc [endpoint method & params]
+  ;(println "rpc: " method)
+  ;(prn params)
   (-> (http/post endpoint
                  (-> {:body (json-rpc-payload method params)}
                      json-encode

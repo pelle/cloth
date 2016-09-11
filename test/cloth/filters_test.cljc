@@ -1,6 +1,7 @@
 (ns cloth.filters-test
   (:require
     [cloth.filters :as filters]
+    [cloth.test-helpers]
     [cloth.core :as core]
     [cloth.keys :as keys]
     [promesa.core :as p]

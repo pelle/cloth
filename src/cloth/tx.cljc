@@ -9,8 +9,7 @@
      (:import [org.ethereum.core Transaction])))
 
 #?(:cljs
-   (def Tx js/EthTx))
-
+   (def Tx (aget util/eth-js "Tx")))
 
 (defn map->tx [params]
   (reduce #(assoc % (keyword (c/camel (name (key %2))))

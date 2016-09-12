@@ -36,6 +36,7 @@
                   (poller)))
       :stop   #(reset! poll false)})))
 
+
 (defn new-block-ch []
   (p/then (chain/new-block-filter)
           filter-ch))

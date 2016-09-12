@@ -8,11 +8,17 @@
        [org.ethereum.crypto HashUtil])))
 
 #?(:cljs
-   (def eth-util js/ethUtil))
+   (def eth-js js/EthJS))
+
 #?(:cljs
-   (def Buffer js/Buffer))
+   (def eth-util (aget eth-js "Util")))
+
 #?(:cljs
-   (def BN (aget eth-util "BN")))
+   (def Buffer (aget eth-js "Buffer" "Buffer")))
+
+#?(:cljs
+   (def BN (aget eth-js "BN")))
+
 #?(:cljs
    (defn biginteger [buffer]
      (BN. (or buffer 0))))

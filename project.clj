@@ -2,8 +2,8 @@
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.9.0-alpha8"]
-                 [org.clojure/clojurescript "1.9.225"]
-                 [org.clojure/core.async "0.2.385"]
+                 [org.clojure/clojurescript "1.9.229"]
+                 [org.clojure/core.async "0.2.391"]
                  [funcool/cats "2.0.0"]
                  [funcool/promesa "1.5.0"]
                  [funcool/httpurr "0.6.2"]
@@ -25,8 +25,19 @@
             [lein-codox "0.9.5"]
             [lein-ancient "0.6.10"]
             [lein-externs "0.1.5"]]
-  :npm {:dependencies [[ethereumjs-tx "1.1.1"]]}
-  :profiles {:dev {:plugins [[lein-auto "0.1.2"]]}}
+  :npm {:dependencies [[karma "1.3.0"]
+                       [karma-chrome-launcher "2.0.0"]
+                       [karma-cljs-test "0.1.0"]
+                       [derequire "2.0.3"]
+                       [browser-builds "ethereumjs/browser-builds"]]}
+
+  ;; NOT WORKING
+  :aliases {"build-ethjs" ^{:doc "Build version of ethereumjs-tx"}
+                          ["shell"
+                           "cat" "node_modules/browser-builds/dist/ethereumjs-tx.js" "|" "babel" "|" "derequire"
+                                  ">src/ethereumjs-tx/ethereumjs-tx.js"]}
+  :profiles {:dev {:plugins [[lein-auto "0.1.2"]
+                             [lein-shell "0.5.0"]]}}
   :cljsbuild
   {:builds {:dev      {:source-paths ["src"]
                        :figwheel     true

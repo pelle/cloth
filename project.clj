@@ -29,12 +29,12 @@
                        [karma-chrome-launcher "2.0.0"]
                        [karma-cljs-test "0.1.0"]
                        [derequire "2.0.3"]
-                       [browser-builds "ethereumjs/browser-builds"]]}
+                       [browser-builds "pelle/browser-builds#babelify"]]}
 
   ;; NOT WORKING
   :aliases {"build-ethjs" ^{:doc "Build version of ethereumjs-tx"}
                           ["shell"
-                           "cat" "node_modules/browser-builds/dist/ethereumjs-tx.js" "|" "babel" "|" "derequire"
+                           "cat" "node_modules/browser-builds/dist/ethereumjs-tx.js" "|" "derequire"
                                   ">src/ethereumjs-tx/ethereumjs-tx.js"]}
   :profiles {:dev {:plugins [[lein-auto "0.1.2"]
                              [lein-shell "0.5.0"]]}}

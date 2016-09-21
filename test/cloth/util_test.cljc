@@ -72,7 +72,8 @@
   (is (= (util/encode-solidity :int32 0) "0000000000000000000000000000000000000000000000000000000000000000"))
 
   (is (= (util/encode-solidity :int32 -1) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
-  (is (= (util/encode-solidity :int32 -16772216) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388"))
+  (is (= (util/encode-solidity :int32 -16772216)                                      "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388"))
+  (is (= (util/encode-solidity :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd") "0000000000000000000000002036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))
 
 
   (is (= (util/encode-solidity :bytes32 "0x0000000000000000000000000000000000000000000000000000000000000001") "0000000000000000000000000000000000000000000000000000000000000001"))
@@ -111,6 +112,8 @@
   (is (eq (util/decode-solidity :int32 "0000000000000000000000000000000000000000000000000000000000000000") 0))
   (is (eq (util/decode-solidity :int32 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") -1))
   (is (eq (util/decode-solidity :int32 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388") -16772216))
+  (is (= (util/decode-solidity "uint32[2]" "0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000f")  [1 15]))
+  (is (= (util/decode-solidity "uint32[]" "00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000f") [1 15]))
 
   (is (= (util/->hex (util/decode-solidity :bytes32 "0000000000000000000000000000000000000000000000000000000000000001")) "0000000000000000000000000000000000000000000000000000000000000001"))
   (is (= (util/->hex (util/decode-solidity :bytes32 "48656c6c6f000000000000000000000000000000000000000000000000000000")) "48656c6c6f000000000000000000000000000000000000000000000000000000"))
@@ -123,6 +126,7 @@
   (is (= (util/decode-solidity :string "00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000") " " ))
   (is (= (util/decode-solidity :address "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
   (is (= (util/decode-solidity :address "0x000000000000000000000000e7b9ef10c866154176cce5ac06de663c85319abb") "0xe7b9ef10c866154176cce5ac06de663c85319abb"))
+  (is (= (util/decode-solidity :address (util/encode-solidity :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd")) "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))
   )
 
 #?(:clj
@@ -163,10 +167,24 @@
   (is (= (util/encode-fn-sig "setMessage" [:string] ["Hello"])                         ;setMessage(string)
          "0x368b87720000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000548656c6c6f000000000000000000000000000000000000000000000000000000")))
 
+(deftest encode-fn-param-tests
+  ; Eamples from https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
+  (is (= (util/encode-fn-param "baz" [:uint32 :bool] [69 true])                         ;baz(uint32 x, bool y)
+         "baz(uint32 69,bool true)"))
+
+
+  (is (= (util/encode-fn-param "sam" [:bytes :bool "uint256[]"] ["dave" true [1,2,3]])                         ;sam(bytes name, bool z, uint[] data)
+         "sam(bytes \"dave\",bool true,uint256[] [1,2,3])"))
+
+  (is (= (util/encode-fn-param "f" [:uint256 "uint32[]" :bytes10 :bytes] [291M [1110M 1929M] "1234567890" "Hello, world!"])                         ;f(uint,uint32[],bytes10,bytes)
+         "f(uint256 291,uint32[] [1110,1929],bytes10 1234567890,bytes \"Hello, world!\")"))
+
+  (is (= (util/encode-fn-param "setMessage" [:string] ["Hello"])                         ;setMessage(string)
+         "setMessage(string \"Hello\")")))
+
 (deftest encode-event-sig-tests
   (is (= (util/encode-event-sig "Issued" [:address :uint])
          "0xc2854a616e539b14ba85c3a25cf07eb16f6f3464be4169e3b125febd05060c6d")))
 
 (deftest decode-solidity-data-tests
-  (is (util/decode-solidity-data [:address] "0x000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec") "0x439c6d36fbdefbcc93d4c4b773511f566b7efbec"))
-
+  (is (= (util/decode-solidity-data [:address :address] "000000000000000000000000439c6d36fbdefbcc93d4c4b773511f566b7efbec0000000000000000000000002036c6cd85692f0fb2c26e6c6b2eced9e4478dfd") '("0x439c6d36fbdefbcc93d4c4b773511f566b7efbec" "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))))

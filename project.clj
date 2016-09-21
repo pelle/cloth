@@ -1,17 +1,19 @@
-(defproject cloth "0.2.7"
+(defproject cloth "0.3.0"
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.9.0-alpha8"]
-                 [org.clojure/clojurescript "1.9.225"]
-                 [org.clojure/core.async "0.2.385"]
+                 [org.clojure/clojurescript "1.9.229"]
+                 [org.clojure/core.async "0.2.391"]
                  [funcool/cats "2.0.0"]
                  [funcool/promesa "1.5.0"]
-                 [funcool/httpurr "0.6.1"]
+                 [funcool/httpurr "0.6.2"]
                  [aleph "0.4.1" :scope "provided"]
-                 [funcool/cuerdas "0.8.0"]
+                 [funcool/cuerdas "1.0.1"]
                  [org.ethereum/ethereumj-core "1.2.0-RELEASE"]
                  [clj-time "0.12.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
+                 [byte-streams "0.2.2"]
+                 [com.cemerick/url "0.1.1"]
                  ;[cljsjs/bignumber "2.1.4-1"]
 
                  [cheshire "5.6.3"]]
@@ -23,9 +25,19 @@
             [lein-codox "0.9.5"]
             [lein-ancient "0.6.10"]
             [lein-externs "0.1.5"]]
-  :npm {:dependencies [[ethereumjs-tx "1.1.1"]]}
-  :profiles {:dev {:plugins [                               ;[lein-auto "0.1.2"]
-                             [com.jakemccrary/lein-test-refresh "0.16.0"]]}}
+  :npm {:dependencies [[karma "1.3.0"]
+                       [karma-chrome-launcher "2.0.0"]
+                       [karma-cljs-test "0.1.0"]
+                       [derequire "2.0.3"]
+                       [browser-builds "pelle/browser-builds#babelify"]]}
+
+  ;; NOT WORKING
+  :aliases {"build-ethjs" ^{:doc "Build version of ethereumjs-tx"}
+                          ["shell"
+                           "cat" "node_modules/browser-builds/dist/ethereumjs-tx.js" "|" "derequire"
+                                  ">src/ethereumjs-tx/ethereumjs-tx.js"]}
+  :profiles {:dev {:plugins [[lein-auto "0.1.2"]
+                             [lein-shell "0.5.0"]]}}
   :cljsbuild
   {:builds {:dev      {:source-paths ["src"]
                        :figwheel     true
@@ -46,7 +58,7 @@
   :doo {:build "test"}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release" "target"]
-  :auto {:default {:file-pattern #"\.(clj|cljs|cljx|edn|sol)$"}
+  :auto {:default {:file-pattern #"\.(clj|cljs|cljc|cljx|edn|sol)$"}
          :paths [ "src" "test"]}
   ;; Home of ethereumj
   :repositories [["oss.jfrog.org" "http://dl.bintray.com/ethereum/maven"]])

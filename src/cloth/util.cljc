@@ -8,11 +8,17 @@
        [org.ethereum.crypto HashUtil])))
 
 #?(:cljs
-   (def eth-util js/ethUtil))
+   (def eth-js js/EthJS))
+
 #?(:cljs
-   (def Buffer js/Buffer))
+   (def eth-util (aget eth-js "Util")))
+
 #?(:cljs
-   (def BN (aget eth-util "BN")))
+   (def Buffer (aget eth-js "Buffer" "Buffer")))
+
+#?(:cljs
+   (def BN (aget eth-js "BN")))
+
 #?(:cljs
    (defn biginteger [buffer]
      (BN. (or buffer 0))))
@@ -44,7 +50,6 @@
                   ba)]
          (Hex/toHexString ba)))))
 
-
 (defn add0x [input]
   (if (string? input)
     (if (re-find #"^0x" input)
@@ -53,7 +58,7 @@
     input))
 
 (defn strip0x [input]
-  (if (re-find #"^0x" input)
+  (if (and (string? input) (re-find #"^0x" input))
     (c/slice input 2)
     input))
 
@@ -269,9 +274,13 @@
   #?(:cljs (js/parseInt s))
   #?(:clj (Integer. s)))
 
-(defn extract-size [type]
+(defmulti extract-size keyword)
+
+(defmethod extract-size :default [type]
   (when-let [size (re-find #"\d+" (name type))]
     (storage-length (parse-int size))))
+(defmethod extract-size :address [type]
+  32)
 
 (defn dynamic-type? [type]
   (re-find #"^(bytes|string|.*\[\])$" (name type)))
@@ -280,8 +289,27 @@
 
 (defmethod decode-solidity :default
   [t v]
-  (println "received " t "= " v)
+  (println "decoding unsupported solidity return value " t "= " v)
   v)
+
+(defmethod decode-solidity :fixed-array
+  [type values]
+  ;; This will only work at the moment where all the elements of the array are the same size
+  (let [[_ type array-length] (re-find #"(.*)\[(\d+)\]" type)
+        size (extract-size type)
+        pattern (re-pattern (str ".{" (* 2 size) "}"))]
+    (mapv (partial decode-solidity type) (re-seq pattern values))))
+
+(defmethod decode-solidity :dynamic-array
+  [type value]
+  ;; This will only work at the moment where all the elements of the array are the same size
+  (let [[_ type] (re-find #"(.*)\[]" type)
+        type (keyword type)
+        array-length (decode-solidity :uint (c/slice value 0 64))
+        data (c/slice value 64)
+        size (extract-size type)
+        pattern (re-pattern (str ".{" (* 2 size) "}"))]
+    (mapv (partial decode-solidity type) (re-seq pattern data))))
 
 (defmethod decode-solidity :address
   [_ v]
@@ -430,9 +458,33 @@
           {:count 0 :head "" :tail ""} (map vector types args))]
     (str head tail)))
 
-(defn encode-fn-sig [name types args]
-  (add0x (str (encode-fn-name name types)
+(defn encode-fn-sig
+  "Encode function for use in a data field"
+  [fname types args]
+  (add0x (str (encode-fn-name fname types)
                    (encode-args types args))))
+
+(defmulti prn-solidity-value (fn [type _] type))
+(defmethod prn-solidity-value :default
+  [_ val]
+  (if (vector? val)
+    (str "[" (c/join "," (map str val)) "]")
+    val))
+(defmethod prn-solidity-value :string
+  [_ val] (str "\"" val "\""))
+(defmethod prn-solidity-value :bytes
+  [_ val]
+  (if (string? val)
+    (if (re-find #"^0x[0-9a-f]*$" val)
+      val
+      (prn-solidity-value :string val))
+    (->hex val)))
+
+
+(defn encode-fn-param
+  "Encode function for use in ethereum uri function param"
+  [fname types args]
+  (str fname "(" (c/join "," (map #(str (name %) " " (prn-solidity-value % %2)) types args)) ")"))
 
 (defn decode-solidity-data [types data]
   (if (or (empty? data) (empty? types))
@@ -461,7 +513,7 @@
                    (first outputs)
                    (apply merge
                           (map
-                            (fn [n v] {(keyword (c/dasherize (name n))) v})
+                            (fn [n v] {(keyword (c/kebab (name n))) v})
                             (map :name output-abi)
                             outputs)))]
      outputs)))

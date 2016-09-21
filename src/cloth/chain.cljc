@@ -42,7 +42,7 @@
     (-> (select-keys tx [:from :to :hash :input])
         (assoc :value (util/hex->uint (:value tx))
                :block-hash (:blockHash tx)
-               :block-number (util/hex->uint (:blockNumber tx))
+               :block-number (and (:blockNumber tx) (util/hex->uint (:blockNumber tx)))
                :nonce (util/hex->uint (:nonce tx))
                :gas (util/hex->uint (:gas tx))
                :gas-price (util/hex->uint (:gasPrice tx))
@@ -144,14 +144,6 @@
   ([object block-number]
    (ethrpc "eth_call" object block-number)))
 
-(defn new-filter
-  [object]
-  (ethrpc "eth_newFilter" (clj->js object)))
-
-(defn new-block-filter
-  []
-  (ethrpc "eth_newBlockFilter"))
-
 (defn get-filter-changes
   [id]
   (ethrpc "eth_getFilterChanges" id))
@@ -159,14 +151,6 @@
 (defn get-filter-logs
   [id]
   (ethrpc "eth_getFilterLogs" id))
-
-(defn get-logs
-  [object]
-  (ethrpc "eth_getLogs" (clj->js object)))
-
-(defn uninstall-filter
-  [id]
-  (ethrpc "eth_uninstallFilter" id))
 
 ;; the following are just for local development we add signing in the browser
 (defn send-transaction

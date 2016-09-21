@@ -2,11 +2,11 @@
 
 Simple ClojureScript (soon Clojure as well) library for interacting with the Ethereum blockchain.
 
-This is extremely WIP and really should not be used by anyone yet. API is likely to change alot in particular with regular clojure support.
+Since it's still fairly early API is likely to change a lot in particular with regular clojure support.
 
 Add the following to your project.clj file:
 
-`[cloth "0.2.7"]`
+`[cloth "0.3.0"]`
 
 Note I have not tested any of this in production or using minified clojurescript code.
 
@@ -41,24 +41,62 @@ The `cloth.core` namespace has most of what you need for regular use for sending
                           :value 100000000N})
 ```
 
-### Key management
+### Signers
 
-The current implementation supports KeyPair maps containing a private-key and an address:
+Signing is done by maps called signers and a multimethod called `(sign-with-signer tx signer)`.
+
+The current implementation supports signers as KeyPair maps containing a private-key and an address:
 
 ```clojure
 {:private-key "0x3fa3d2b5c94e3f521d6c160e0ef97123cc6d0946c12869b949959aa0f8c333de", 
  :address "0x9927ff21b9bb0eee9b0ee4867ebf9102d12d6ecb"}
 ```
 
-The `cloth.keys` has a function `(create-keypair)` which creates a map like above.
+The `cloth.keys` namespace has a function `(create-keypair)` which creates a map like above.
 
-In regular use you can store a keypair in a global keypair atom `cloth.core/global-keypair`:
+#### Ethereum URL's
+
+Or a url based signer which generates an ethereum-url primarily useful to create a link on a mobile browser or a QR code.
 
 ```clojure
-(reset! cloth.core/global-keypair (cloth.keys/create-keypair))
+{:type :url, 
+ :address "0x9927ff21b9bb0eee9b0ee4867ebf9102d12d6ecb" ;; optional
+ :show-url (fn [url] 
+                ;; trigger display of url in your web page
+                ;; return a promise that is fullfilled based on a onhashchange event 
+ )}
 ```
 
-For server applications you may want to assign a keypair to a request using dynamic binding.
+#### Proxy Signers
+
+Proxy signers use simple smart contracts known as Proxy's that can be controlled through one or more `device keys` or other kinds of business rules.
+
+A proxy contract needs to implement a function with the following interface:
+
+```solidity
+function forward(address recipient, uint value, bytes data) {
+   // forward contract based on certain busines rules
+}
+```
+
+Once you have your proxy contract deployed you can create a signer like this:
+
+```clojure
+{ :type :proxy
+  :address "0xbfd6f4d8016d3b2388af8a6617778a3686993a1a" ;; address of proxy contract
+  :device { :private-key "0x3fa3d2b5c94e3f521d6c160e0ef97123cc6d0946c12869b949959aa0f8c333de", 
+            :address "0x9927ff21b9bb0eee9b0ee4867ebf9102d12d6ecb"}}
+```
+
+#### Creating a global signer
+
+In regular use with a single signer for example in a web app set it in a global signer atom `cloth.core/global-signer`:
+
+```clojure
+(reset! cloth.core/global-signer (cloth.keys/create-keypair))
+```
+
+For server applications you may want to assign a signer to a request using dynamic binding.
 
 This is particularly useful in a ring-middleware:
 
@@ -68,13 +106,13 @@ This is particularly useful in a ring-middleware:
   ;; App specific code
   ...)
   
-(defn wrap-signing-key [app]
+(defn wrap-signer [app]
   (fn [request])
-    (binding [cloth.core/bound-keypair (extract-key-from-request request)]
+    (binding [cloth.core/bound-signer (extract-key-from-request request)]
       (app request)))
 ```
 
-All code in the `cloth.core` namespace uses the `(cloth.core/keypair)` function to return the current keypair map.
+All code in the `cloth.core` namespace uses the `(cloth.core/current-signer)` function to return the current keypair map.
 
 Instead of callbacks we use [promesa](http://funcool.github.io/promesa/latest/) which allow us to compose functions easily.
 

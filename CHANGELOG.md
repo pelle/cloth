@@ -1,5 +1,14 @@
 # CLOTH Changelog
 
+### 0.3.0
+
+- Introduces concept of `signer` BREAKING CHANGE
+    - Support ethereum URL's
+    - Supports Proxy Contracts
+- Fixes issues with bytes32
+- Supports array return values
+- Make polling times adjustable
+
 ### 0.2.7
 
 - Fix `bytes` and `bytesXX` encoding and decoding of solidity function call parameters

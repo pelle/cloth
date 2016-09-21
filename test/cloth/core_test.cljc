@@ -2,24 +2,31 @@
   (:require [cloth.core :as core]
             [cloth.keys :as keys]
             [promesa.core :as p]
+            [cloth.test-helpers]
             [cloth.chain :as chain]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures async]]]
-        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
+        :clj  [
+            [clojure.test :refer [is are deftest testing use-fixtures]]
+            [cloth.contracts :as c :refer [defcontract]]])
+            [cloth.tx :as tx]
+            [cloth.core :as cloth])
+  #?(:cljs (:require-macros
+             [cloth.contracts :as c])))
 
 
 (defn create-new-keypair! []
-  (reset! core/global-keypair (keys/create-keypair)))
+  (reset! core/global-signer (keys/create-keypair)))
 
 (deftest test-keypair
-  (reset! core/global-keypair nil)
-  (is (= (core/keypair) nil))
+  (reset! core/global-signer nil)
+  (is (= (core/current-signer) nil))
   (let [gl (keys/create-keypair)
         lo (keys/create-keypair)]
-    (reset! core/global-keypair gl)
-    (is (= (core/keypair) gl))
-    (binding [core/bound-keypair lo]
-      (is (= (core/keypair) lo)))
-    (reset! core/global-keypair nil)))
+    (reset! core/global-signer gl)
+    (is (= (core/current-signer) gl))
+    (binding [core/bound-signer lo]
+      (is (= (core/current-signer) lo)))
+    (reset! core/global-signer nil)))
 
 (deftest balance-test
   (create-new-keypair!)
@@ -100,7 +107,7 @@
                 (p/mapcat
                   (fn [tx]
                     (is tx)
-                    (is (= (:from tx) (:address (core/keypair))))
+                    (is (= (:from tx) (:address (core/current-signer))))
                     (is (= (:to tx) recipient))
                     (is (= (:value tx) 100000))
                     (done))))
@@ -112,7 +119,88 @@
        (let [_ @(core/faucet! 10000000000)
              tx @(core/sign-and-send! {:to recipient :value 12340000})]
          (is tx)
-         (is (= (:from tx) (:address (core/keypair))))
+         (is (= (:from tx) (:address (core/current-signer))))
          (is (= (:to tx) recipient))
          (is (= (:value tx) 12340000))
          (is (= @(chain/get-balance recipient) 12340000))))))
+
+(deftest sign-with-signer-url-test
+  (let [keypair (keys/create-keypair)]
+    (reset! core/global-signer {:address  (:address keypair)
+                                :type     :url
+                                :show-url (fn [url] (core/sign-and-send! (tx/url->map url) keypair))})
+    (let [recipient (:address (keys/create-keypair))]
+      #?(:cljs
+         (async done
+           (p/catch
+             (->> (core/faucet! 10000000000)
+                  (p/mapcat (fn [_] (core/sign-and-send! {:to recipient :value 100000})))
+                  (p/mapcat
+                    (fn [tx]
+                      (is tx)
+                      (is (= (:from tx) (:address (core/current-signer))))
+                      (is (= (:to tx) recipient))
+                      (is (= (:value tx) 100000))
+                      (done))))
+             (fn [e]
+               (println "Error: " (prn-str e))
+               (is (nil? e))
+               (done))))
+         :clj
+         (let [_ @(core/faucet! 10000000000)
+               tx @(core/sign-and-send! {:to recipient :value 12340000})]
+           (is tx)
+           (is (= (:from tx) (:address (core/current-signer))))
+           (is (= (:to tx) recipient))
+           (is (= (:value tx) 12340000))
+           (is (= @(chain/get-balance recipient) 12340000)))))))
+
+(deftest sign-with-signer-proxy-test
+  (let [keypair (keys/create-keypair)]
+    (reset! core/global-signer keypair)
+    (c/defcontract proxy "test/cloth/Proxy.sol")
+
+    (let [recipient (:address (keys/create-keypair))]
+      #?(:cljs
+         (async done
+           (p/catch
+             (->> (core/faucet! 10000000000)
+                  (p/mapcat (fn [] (deploy-proxy!)))
+                  (p/mapcat (fn [contract]
+                              (reset! core/global-signer {:address  contract
+                                                          :type     :proxy
+                                                          :device  keypair})))
+                  (p/mapcat (fn [] (core/faucet! 10000000000)))
+                  (p/mapcat (fn [_] (core/sign-and-send! {:to recipient :value 12340000})))
+                  (p/mapcat
+                    (fn [tx]
+                      (is tx)
+                      (is (= (:from tx) (:address keypair)))
+                      (is (= (:to tx) (:address (core/current-signer))))
+                      (is (= (:value tx) 0))
+                      ))
+                  (p/mapcat
+                    (fn [] (chain/get-balance recipient)))
+                  (p/mapcat #(is (= % 12340000)))
+                  (p/mapcat
+                    (fn [] (chain/get-balance (:address (core/current-signer)))))
+                  (p/mapcat #(is (= % (- 10000000000 12340000))))
+                  (p/mapcat done))
+             (fn [e]
+               (println "Error: " (prn-str e))
+               (is (nil? e))
+               (done))))
+         :clj
+         (let [_ @(core/faucet! 10000000000)
+               contract @(deploy-proxy!)
+               _ (reset! core/global-signer {:address  contract
+                                           :type     :proxy
+                                           :device  keypair})
+               _ @(core/faucet! 10000000000)
+               tx @(core/sign-and-send! {:to recipient :value 12340000})]
+           (is tx)
+           (is (= (:from tx) (:address keypair)))
+           (is (= (:to tx) contract))
+           (is (= (:value tx) 0))
+           (is (= @(chain/get-balance recipient) 12340000))
+           (is (= @(chain/get-balance contract) (- 10000000000 12340000))))))))

@@ -1,7 +1,8 @@
+pragma solidity ^0.4.1;
 contract SimpleToken {
   uint32 public circulation;
   address public issuer;
-//  address[] public members;
+  address[] public customers;
   mapping (address => uint32) public balances;
   mapping (address => uint) public authorized;
   string public message;
@@ -9,16 +10,16 @@ contract SimpleToken {
 
   event Issued(address indexed recipient, uint32 amount);
   event Message(address indexed shouter, string message);
-
+  event Transferred(address indexed sender, address indexed recipient, uint32 amount);
 
   function SimpleToken() {
     issuer = msg.sender;
   }
 
-  modifier onlyIssuer() { if (msg.sender == issuer) _ }
-  modifier sufficientFunds(uint32 amount) { if (amount <= balances[msg.sender]) _ }
-  modifier authorizedCustomer(address customer) { if (authorized[customer] != 0 ) _ }
-  modifier unAuthorizedCustomer(address customer) { if (authorized[customer] == 0 ) _ }
+  modifier onlyIssuer() { if (msg.sender == issuer) _ ; }
+  modifier sufficientFunds(uint32 amount) { if (amount <= balances[msg.sender]) _ ; }
+  modifier authorizedCustomer(address customer) { if (authorized[customer] != 0 ) _ ; }
+  modifier unAuthorizedCustomer(address customer) { if (authorized[customer] == 0 ) _ ; }
 
   function customer(address customer) constant
     returns(uint authorizedTime, uint32 balance) {
@@ -30,6 +31,7 @@ contract SimpleToken {
     unAuthorizedCustomer(customer)
     returns(bool success) {
         authorized[customer] = block.timestamp;
+        customers.push(customer);
         return true;
   }
 
@@ -38,7 +40,6 @@ contract SimpleToken {
     returns(bool success) {
         circulation = amount;
         balances[recipient] = amount;
-//      members.push(recipient);
         Issued(recipient, amount);
         return true;
   }
@@ -50,14 +51,18 @@ contract SimpleToken {
         return message;
   }
 
-//  function transfer(address recipient, uint amount) public
-//    authorizedCustomer(msg.sender)
-//    sufficientFunds(amount)
-//    returns(bool success) {
-//    balances[msg.sender] -= amount;
-//    balances[recipient] += amount;
-//    Transfered(recipient, amount);
-//    return true;
-//  }
-//
+  function getCustomers() constant returns(address[]) {
+    return customers;
+  }
+
+  function transfer(address recipient, uint32 amount) public
+    authorizedCustomer(msg.sender)
+    sufficientFunds(amount)
+    returns(bool success) {
+    balances[msg.sender] -= amount;
+    balances[recipient] += amount;
+    Transferred(msg.sender, recipient, amount);
+    return true;
+  }
+
 }

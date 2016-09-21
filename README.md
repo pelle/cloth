@@ -2,11 +2,11 @@
 
 Simple ClojureScript (soon Clojure as well) library for interacting with the Ethereum blockchain.
 
-This is extremely WIP and really should not be used by anyone yet. API is likely to change alot in particular with regular clojure support.
+Since it's still fairly early API is likely to change a lot in particular with regular clojure support.
 
 Add the following to your project.clj file:
 
-`[cloth "0.3.0-SNAPSHOT"]`
+`[cloth "0.3.0"]`
 
 Note I have not tested any of this in production or using minified clojurescript code.
 
@@ -54,6 +54,8 @@ The current implementation supports signers as KeyPair maps containing a private
 
 The `cloth.keys` namespace has a function `(create-keypair)` which creates a map like above.
 
+#### Ethereum URL's
+
 Or a url based signer which generates an ethereum-url primarily useful to create a link on a mobile browser or a QR code.
 
 ```clojure
@@ -64,6 +66,29 @@ Or a url based signer which generates an ethereum-url primarily useful to create
                 ;; return a promise that is fullfilled based on a onhashchange event 
  )}
 ```
+
+#### Proxy Signers
+
+Proxy signers use simple smart contracts known as Proxy's that can be controlled through one or more `device keys` or other kinds of business rules.
+
+A proxy contract needs to implement a function with the following interface:
+
+```solidity
+function forward(address recipient, uint value, bytes data) {
+   // forward contract based on certain busines rules
+}
+```
+
+Once you have your proxy contract deployed you can create a signer like this:
+
+```clojure
+{ :type :proxy
+  :address "0xbfd6f4d8016d3b2388af8a6617778a3686993a1a" ;; address of proxy contract
+  :device { :private-key "0x3fa3d2b5c94e3f521d6c160e0ef97123cc6d0946c12869b949959aa0f8c333de", 
+            :address "0x9927ff21b9bb0eee9b0ee4867ebf9102d12d6ecb"}}
+```
+
+#### Creating a global signer
 
 In regular use with a single signer for example in a web app set it in a global signer atom `cloth.core/global-signer`:
 

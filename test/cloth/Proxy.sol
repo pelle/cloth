@@ -14,5 +14,5 @@ contract Proxy {
                 throw;
             }
         }
-     }
+    }
 }

@@ -8,7 +8,8 @@
         :clj  [
             [clojure.test :refer [is are deftest testing use-fixtures]]
             [cloth.contracts :as c :refer [defcontract]]])
-            [cloth.tx :as tx])
+            [cloth.tx :as tx]
+            [cloth.core :as cloth])
   #?(:cljs (:require-macros
              [cloth.contracts :as c])))
 

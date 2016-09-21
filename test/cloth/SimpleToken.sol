@@ -1,3 +1,4 @@
+pragma solidity ^0.4.1;
 contract SimpleToken {
   uint32 public circulation;
   address public issuer;
@@ -15,10 +16,10 @@ contract SimpleToken {
     issuer = msg.sender;
   }
 
-  modifier onlyIssuer() { if (msg.sender == issuer) _ }
-  modifier sufficientFunds(uint32 amount) { if (amount <= balances[msg.sender]) _ }
-  modifier authorizedCustomer(address customer) { if (authorized[customer] != 0 ) _ }
-  modifier unAuthorizedCustomer(address customer) { if (authorized[customer] == 0 ) _ }
+  modifier onlyIssuer() { if (msg.sender == issuer) _ ; }
+  modifier sufficientFunds(uint32 amount) { if (amount <= balances[msg.sender]) _ ; }
+  modifier authorizedCustomer(address customer) { if (authorized[customer] != 0 ) _ ; }
+  modifier unAuthorizedCustomer(address customer) { if (authorized[customer] == 0 ) _ ; }
 
   function customer(address customer) constant
     returns(uint authorizedTime, uint32 balance) {

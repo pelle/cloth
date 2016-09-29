@@ -158,7 +158,7 @@
 (defn fn-tx
   ([contract fn-abi args]
    (let [params (if (map? (last args)) (last args) {})
-         args (if (map? (last args)) (pop args) args)
+         args (if (map? (last args)) (rest args) args)
          types (map :type (:inputs fn-abi))]
      (fn-tx contract (:name fn-abi) types args params)))
   ([contract name types args params]

@@ -31,7 +31,7 @@
 (defn json-rpc-response [response]
   ;(prn (:body response))
   (if-let [error (get-in response [:body :error])]
-    (ex-info "json-rpc-error" error)
+    (throw (ex-info "json-rpc-error" error))
     (get-in response [:body :result])))
 
 (defn process-response

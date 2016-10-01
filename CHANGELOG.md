@@ -1,5 +1,9 @@
 # CLOTH Changelog
 
+### 0.3.1
+
+- Support contract constructor arguments
+
 ### 0.3.0
 
 - Introduces concept of `signer` BREAKING CHANGE

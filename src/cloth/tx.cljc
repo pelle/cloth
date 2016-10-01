@@ -169,10 +169,16 @@
        (map->tx))))
 
 (defn create-contract-tx
-  [bin params]
-  (-> params
-      (assoc :data bin)
-      (map->tx)))
+  ([bin params]
+    (create-contract-tx bin params {:inputs [] :type "constructor"} []))
+  ([bin params fn-abi args]
+   (let [types (map :type (:inputs fn-abi))
+         bin (if (empty? types)
+               bin
+               (str bin (util/encode-args types args)))]
+     (-> params
+         (assoc :data bin)
+         (map->tx)))))
 
 
 

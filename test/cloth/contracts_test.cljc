@@ -117,3 +117,32 @@
               (is (= event {:sender recipient :recipient other-user :amount 11})))
 
            ))))
+
+
+(c/defcontract constructed "test/cloth/Constructed.sol")
+
+(deftest deploy-with-constructor-test
+  (create-new-keypair!)
+  #?(:cljs
+     (let [contract (atom nil)]
+       (async done
+         (-> (core/faucet! 10000000000)
+             (p/then core/when-mined)
+             (p/then #(deploy-constructed! "Hello"))
+             (p/then (fn [c] (reset! contract c)))
+             (p/then #(status %))
+             (p/then (fn [message]
+                       (is (= message "Hello"))
+                       (done)))
+             (p/catch (fn [e]
+                        (println "Error: " (prn-str e))
+                        (prn (.-stack e))
+                        (done)))
+             )))
+     :clj
+     (do @(core/faucet! 10000000000)
+         (let [ contract @(deploy-constructed! "Hello")]
+           (is contract)
+           (is (= @(status contract) "Hello"))
+           ))))
+

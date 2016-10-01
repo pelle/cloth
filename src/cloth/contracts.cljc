@@ -27,8 +27,8 @@
      (mapv #(symbol (c/kebab (:name %))) (:inputs f))))
 
 
-(defn deploy-contract [binary]
-  (->> (cloth/sign-and-send! (tx/create-contract-tx binary {}))
+(defn deploy-contract [binary fabi args]
+  (->> (cloth/sign-and-send! (tx/create-contract-tx binary {} fabi args))
        (p/mapcat cloth/when-mined)
        (p/mapcat chain/get-transaction-receipt)
        (p/mapcat (fn [receipt] (p/resolved (:contract-address receipt))))))
@@ -89,11 +89,12 @@
            binary (get-in compiled [:contracts contract-key :bin])
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)
+           constructor (first (filter #(= (:type %) "constructor") abi))
            events (filter #(= (:type %) "event") abi)
            deploy-name (symbol (str "deploy-" (c/kebab (name contract)) "!"))]
        `(do
-          (defn ~deploy-name []
-            (deploy-contract ~binary))
+          (defn ~deploy-name [ & args# ]
+            (deploy-contract ~binary ~constructor args#))
 
           ~@(for [f functions]
               (if (:constant f)

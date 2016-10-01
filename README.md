@@ -6,7 +6,7 @@ Since it's still fairly early API is likely to change a lot in particular with r
 
 Add the following to your project.clj file:
 
-`[cloth "0.3.0"]`
+`[cloth "0.3.1"]`
 
 Note I have not tested any of this in production or using minified clojurescript code.
 
@@ -132,6 +132,9 @@ The `cloth.contracts` namespace allows you to compile solidity code and create c
 
 ;; Deploy the solidity code to the blockchain
 (def contract-address @(deploy-simple-token!))
+
+;; If a contract constructor require arguments add them to the deploy function
+(def contract-address @(deploy-simple-token! "message" 1231231111))
 
 ;; Constant functions (that is for quering data from a smart contract)
 

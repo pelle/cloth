@@ -3,6 +3,8 @@
 ### 0.3.1
 
 - Support contract constructor arguments
+- RPC errors actually throw errors now @hookercookerman
+- Bug when encoding fnsig @hookercookerman
 
 ### 0.3.0
 

@@ -1,4 +1,4 @@
-(defproject cloth "0.3.0"
+(defproject cloth "0.3.1"
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.9.0-alpha8"]
@@ -8,7 +8,7 @@
                  [funcool/promesa "1.5.0"]
                  [funcool/httpurr "0.6.2"]
                  [aleph "0.4.1" :scope "provided"]
-                 [funcool/cuerdas "1.0.1"]
+                 [funcool/cuerdas "1.0.2"]
                  [org.ethereum/ethereumj-core "1.2.0-RELEASE"]
                  [clj-time "0.12.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]

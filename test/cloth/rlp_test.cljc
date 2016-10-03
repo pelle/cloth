@@ -31,7 +31,6 @@
              false))))
 
 (deftest encode-tests
-         (prn (rlp/->buf (->bytes "dog")))
          (is (encoded? (->bytes "dog") [0x83 \d \o \g]))
          (is (encoded? [(->bytes "cat") (->bytes "dog")] [0xc8, 0x83, \c, \a, \t, 0x83, \d, \o, \g]))
          (is (encoded? (->bytes "") [0x80]))

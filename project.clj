@@ -16,7 +16,7 @@
                  [com.cemerick/url "0.1.1"]
                  ;[cljsjs/bignumber "2.1.4-1"]
                  [cheshire "5.6.3"]
-                 [funcool/octet "0.4.0"]]
+                 [funcool/octet "1.0.0"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.3"]

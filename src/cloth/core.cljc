@@ -4,6 +4,7 @@
             [cats.core :as m]
             [cloth.chain :as chain]
             [cloth.util :as util]
+            [cloth.bytes :as b]
             [cloth.keys :as keys]))
 
 #?(:cljs (enable-console-print!))
@@ -114,7 +115,7 @@
                        :value 0
                        :data (util/encode-fn-sig "forward"
                                                  [:address :uint256 :bytes]
-                                                 [(:to t) (:value t 0) (:data t (util/hex-> ""))]))
+                                                 [(:to t) (:value t 0) (:data t (b/->bytes ""))]))
                      device))
 
 (defn sign-and-send!

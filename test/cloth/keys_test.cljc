@@ -1,6 +1,7 @@
 (ns cloth.keys-test
   (:require [cloth.keys :as keys]
             [cloth.util :as util]
+            [cloth.bytes :as b]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
 
@@ -31,9 +32,9 @@
 
 (deftest test-get-private-key
   (let [private-key (keys/create-private-key)
-        hex-private-key (util/->hex (keys/priv->b private-key))]
-    (is (= (util/->hex (keys/priv->b (keys/get-private-key private-key))) hex-private-key))
-    (is (= (util/->hex (keys/priv->b (keys/get-private-key hex-private-key))) hex-private-key))
-    (is (= (util/->hex (keys/priv->b
+        hex-private-key (b/->hex (keys/priv->b private-key))]
+    (is (= (b/->hex (keys/priv->b (keys/get-private-key private-key))) hex-private-key))
+    (is (= (b/->hex (keys/priv->b (keys/get-private-key hex-private-key))) hex-private-key))
+    (is (= (b/->hex (keys/priv->b
                          (keys/get-private-key
                            (keys/keypair private-key)))) hex-private-key))))

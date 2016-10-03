@@ -1,6 +1,7 @@
 (ns cloth.tx
   (:require #?@(:cljs [ethereumjs-tx])
     [cloth.util :as util]
+    [cloth.bytes :as b]
     [clojure.walk :refer [keywordize-keys]]
     [cloth.keys :as keys]
     [cuerdas.core :as c]
@@ -15,7 +16,7 @@
   (reduce #(assoc % (keyword (c/camel (name (key %2))))
                     (if (= (key %2) :function)
                       (val %2)
-                      (util/add0x (val %2))))
+                      (b/add0x (val %2))))
           {} params))
 
 (defn map->url [params]
@@ -68,54 +69,54 @@
      (Tx. (clj->js (map->tx params))))
   #?(:clj
      (let [{:keys [to value nonce gas-price gas-limit data] :as tx} params]
-       (Transaction. (if nonce (util/int->b nonce))
-                     (if gas-price (util/int->b gas-price))
-                     (if gas-limit (util/int->b gas-limit))
-                     (if to (util/hex-> to))
-                     (if value (util/int->b value))
-                     (if data (util/hex-> data))))))
+       (Transaction. (if nonce (b/->bytes nonce))
+                     (if gas-price (b/->bytes gas-price))
+                     (if gas-limit (b/->bytes gas-limit))
+                     (if to (b/->bytes to))
+                     (if value (b/->bytes value))
+                     (if data (b/->bytes data))))))
 
 (defn recipient [tx]
   (->
     #?(:cljs (if (> (.-length (.-to tx)) 0) (.-to tx) (util/zeros 1)))
     #?(:clj (.getReceiveAddress tx))
-    (util/->hex)
-    (util/add0x)))
+    (b/->hex)
+    (b/add0x)))
 
 (defn sender [tx]
   (-> #?(:cljs (if (.verifySignature tx)
                  (.getSenderAddress tx)))
       #?(:clj (if (.getSignature tx)
                 (.getSender tx)))
-      (util/->hex)
-      (util/add0x)))
+      (b/->hex)
+      (b/add0x)))
 
 (defn data [tx]
   (-> #?(:cljs (if (> (.-length (.-data tx)) 0) (.-data tx)))
       #?(:clj (.getData tx))
-      (util/->hex)
-      (util/add0x)))
+      (b/->hex)
+      (b/add0x)))
 
 (defn nonce [tx]
   (-> #?(:cljs (.-nonce tx))
       #?(:clj (.getNonce tx))
-      (util/b->uint)))
+      (b/->uint)))
 
 (defn gas-price [tx]
   (->
     #?(:cljs (.-gasPrice tx))
     #?(:clj (.getGasPrice tx))
-    (util/b->uint)))
+    (b/->uint)))
 
 (defn gas-limit [tx]
   (-> #?(:cljs (.-gasLimit tx))
       #?(:clj (.getGasLimit tx))
-      (util/b->uint)))
+      (b/->uint)))
 
 (defn value [tx]
   (-> #?(:cljs (.-value tx))
       #?(:clj (.getValue tx))
-      (util/b->uint)))
+      (b/->uint)))
 
 (defn tx->map [tx]
   (when tx
@@ -138,8 +139,8 @@
 (defn ->hex [tx]
   (-> tx
       (tx->b)
-      (util/->hex)
-      (util/add0x)))
+      (b/->hex)
+      (b/add0x)))
 
 (defn sign [tx priv]
   #?(:cljs

@@ -2,6 +2,7 @@
   (:require [cloth.tx :as tx]
             [cloth.keys :as keys]
             [cloth.util :as util]
+            [cloth.bytes :as b]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
 

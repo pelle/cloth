@@ -1,6 +1,7 @@
 (ns cloth.keys
   (:require #?@(:cljs [ethereumjs-tx])
-            [cloth.util :as util])
+            [cloth.util :as util]
+            [cloth.bytes :as b])
   #?(:clj
      (:import [org.ethereum.crypto ECKey]
               [org.ethereum.core Transaction])))
@@ -34,8 +35,8 @@
      ((aget util/eth-util "privateToPublic") private-key)))
 
 (defn ->address [private-key]
-  #?(:cljs (util/hex0x ((aget util/eth-util "pubToAddress") (->public-key private-key))))
-  #?(:clj (util/hex0x (.getAddress private-key))))
+  #?(:cljs (b/hex0x ((aget util/eth-util "pubToAddress") (->public-key private-key))))
+  #?(:clj (b/hex0x (.getAddress private-key))))
 
 (defn priv->b [priv]
   #?(:cljs (identity priv))
@@ -52,18 +53,18 @@
 (defn keypair
   ([b]
    (let [private-key (b->priv (if (string? b)
-                                (util/hex-> b)
+                                (b/->bytes b)
                                 b))]
-     {:private-key (util/hex0x (priv->b private-key))
+     {:private-key (b/hex0x (priv->b private-key))
       :address     (->address private-key)})))
 
 (defn get-private-key
   "pass a keypair map or a private-key either hex or buffer and returns a private key for signing pupr"
   [kp-or-private-key]
   (let [b (if (:private-key kp-or-private-key)
-            (util/hex-> (:private-key kp-or-private-key))
+            (b/->bytes (:private-key kp-or-private-key))
             (if (string? kp-or-private-key)
-              (util/hex-> kp-or-private-key)
+              (b/->bytes kp-or-private-key)
               kp-or-private-key))]
     (b->priv b)))
 

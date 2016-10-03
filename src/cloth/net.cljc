@@ -1,6 +1,7 @@
 (ns cloth.net
   (:require [promesa.core :as p]
             [httpurr.status :as s]
+            [cloth.bytes :as b]
     #?@(:cljs [[httpurr.client.xhr :as http]])
     #?@(:clj [[httpurr.client.aleph :as http]
               [cheshire.core :as json]

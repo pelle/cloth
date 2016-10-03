@@ -78,7 +78,7 @@
 
 (defn recipient [tx]
   (->
-    #?(:cljs (if (> (.-length (.-to tx)) 0) (.-to tx) (util/zeros 1)))
+    #?(:cljs (if (> (.-length (.-to tx)) 0) (.-to tx) (b/zeros 1)))
     #?(:clj (.getReceiveAddress tx))
     (b/->hex)
     (b/add0x)))

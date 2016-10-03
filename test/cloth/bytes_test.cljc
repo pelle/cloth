@@ -1,15 +1,13 @@
-(ns cloth.bytes-test)
 (ns cloth.bytes-test
   (:require [cloth.bytes :as b]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]
-               [cloth.util :refer [biginteger ]]]
-        :clj  [
-            [clojure.test :refer [is are deftest testing use-fixtures]]])))
+               [goog.math.Integer :as Integer]]
+        :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
 
 (defn eq
   [a b]
   #?(:clj  (.equals a (biginteger b))
-     :cljs (.eq a (biginteger b))))
+     :cljs (.eq a (Integer/fromNumber b))))
 
 (defn hex= [bytes hex]
   (= (b/->hex bytes) hex))
@@ -17,6 +15,7 @@
 (deftest test-add0x
   (is (= (b/add0x "ab0c") "0xab0c"))
   (is (= (b/add0x "0xab0c") "0xab0c")))
+
 
 (deftest test-strip0x
   (is (= (b/strip0x "ab0c") "ab0c"))
@@ -28,19 +27,18 @@
   (is (b/hex? "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8")))
 
 (deftest test->hex
-  (is (= (b/->hex (byte-array 0)) ""))
-  (is (= (b/->hex (byte-array 4)) "00000000"))
+  (is (= (b/->hex (b/byte-array 0)) ""))
+  (is (= (b/->hex (b/byte-array 4)) "00000000"))
   (is (= (b/->hex "00000000") "00000000"))
   (is (= (b/->hex "0x00000000") "00000000"))
   (is (= (b/->hex "Hello") "48656c6c6f")))
 
 (deftest test->bytes
-  (is (hex= (b/->bytes (byte-array 0)) ""))
-  (is (hex= (b/->bytes (byte-array 4)) "00000000"))
+  (is (hex= (b/->bytes (b/byte-array 0)) ""))
+  (is (hex= (b/->bytes (b/byte-array 4)) "00000000"))
   (is (hex= (b/->bytes "00000000") "00000000"))
   (is (hex= (b/->bytes "0x00000000") "00000000"))
   (is (hex= (b/->bytes "Hello") "48656c6c6f")))
-
 
 (deftest test-rpad
   (is (= (b/->hex (b/rpad (b/->bytes "ab") 4)) "ab000000"))

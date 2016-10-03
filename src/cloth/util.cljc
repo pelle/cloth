@@ -12,8 +12,8 @@
 #?(:cljs
    (def eth-util (aget eth-js "Util")))
 
-;#?(:cljs
-;   (def Buffer (aget eth-js "Buffer" "Buffer")))
+#?(:cljs
+   (def Buffer (aget eth-js "Buffer" "Buffer")))
 ;
 ;#?(:cljs
 ;   (def BN (aget eth-js "BN")))

@@ -2,14 +2,15 @@
   (:require [cloth.util :as util]
             [cloth.bytes :as b]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]
-               [cloth.util :refer [biginteger ]]]
+               [goog.math.Integer :as Integer]]
         :clj  [
             [clojure.test :refer [is are deftest testing use-fixtures]]])))
 
 (defn eq
   [a b]
   #?(:clj  (.equals a (biginteger b))
-     :cljs (.eq a (biginteger b))))
+     :cljs (.eq a (Integer/fromNumber b))))
+
 
 (deftest test-sha3
   (is (= (b/->hex (util/sha3 "hello")) "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8")))

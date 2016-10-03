@@ -171,26 +171,43 @@
            (java.lang.System/arraycopy ba (- (count ba) l) padded 0 l))
          padded))))
 
+(defn hex->big-integer [hex]
+  #?(:cljs (goog.math.Integer/fromString hex 16)
+     :clj  (BigInteger. hex 16)))
+
 (defn- ->big-integer [ba]
   #?(:cljs (goog.math.Integer/fromNumber ba)
      :clj  (biginteger ba)))
 
 (defn ->int [data]
   (if data
-    (if (number? data)
-      (->big-integer data)
+    (cond
+      (number? data)
+        (->big-integer data)
+      (hex? data)
+        (hex->big-integer data)
+      :else
       (->big-integer (->bytes data)))
     0))
 
 (defn ->uint [data]
   (if data
-    (if (number? data)
-      (->big-integer data)
+    (cond
+      (number? data)
+        (->big-integer data)
+      (hex? data)
+        (hex->big-integer data)
+      :else
       (-> data
           ->bytes
           pad-single-byte
           ->big-integer))
     0))
 
+(defonce zero (->big-integer 0))
+
 (defn int->hex [i]
-  (->hex i))
+  (let [bi (->big-integer i)]
+    (if (.equals bi zero)
+      ""
+      (pad-to-even (.toString bi 16)))))

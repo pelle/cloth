@@ -7,7 +7,7 @@
 (defn eq
   [a b]
   #?(:clj  (.equals a (biginteger b))
-     :cljs (.eq a (Integer/fromNumber b))))
+     :cljs (.equals a (Integer/fromNumber b))))
 
 (defn hex= [bytes hex]
   (= (b/->hex bytes) hex))
@@ -61,12 +61,13 @@
   (is (eq (b/->int "00ff00") 65280)))
 
 (deftest test->uint
-  (is (= (b/->uint "0x0") 0))
-  (is (= (b/->uint "0x00") 0))
-  (is (= (b/->uint "0xff00") 65280))
-  (is (= (b/->uint "00") 0))
-  (is (= (b/->uint "ff00") 65280)))
+  (is (eq (b/->uint "0x0") 0))
+  (is (eq (b/->uint "0x00") 0))
+  (is (eq (b/->uint "0xff00") 65280))
+  (is (eq (b/->uint "00") 0))
+  (is (eq (b/->uint "ff00") 65280)))
 
 (deftest test-int->hex
   (is (= (b/int->hex 0) ""))
+  (is (= (b/int->hex 1) "01"))
   (is (= (b/int->hex 65280) "ff00")))

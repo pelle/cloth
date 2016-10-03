@@ -78,6 +78,13 @@
     #?(:cljs (Integer/from val)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
+(defn uint->bytes
+  "converts anything into platform native byte array. Non 0x prefixed hex strings are interpreted as strings and as such are not hex decoded"
+  [val]
+  (let [val (if (nil? val) 0 val)]
+    #?(:cljs (Integer/from val)
+       :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
+
 (defn ->hex
   "Convert anything into a hex encoded string"
   [data]

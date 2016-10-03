@@ -61,11 +61,11 @@
          "0000000000000000000000000000000000000000000000000000000000000000")
 
 (defn solidity-uint [length val]
-  (->hex (pad (->bytes val) (/ length 8))))
+  (->hex (pad (b/uint->bytes val) (/ length 8))))
 
 (defn solidity-int [length val]
   (let [pad (if (neg? val) b/negative-pad pad)]
-    (->hex (pad (->bytes val) (/ length 8)))))
+    (->hex (pad (b/->bytes val) (/ length 8)))))
 
 (defn extract-type [type _]
   (let [ts (name type)]
@@ -91,6 +91,7 @@
 (defmethod extract-size :default [type]
   (when-let [size (re-find #"\d+" (name type))]
     (storage-length (parse-int size))))
+
 (defmethod extract-size :address [type]
   32)
 

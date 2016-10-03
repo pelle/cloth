@@ -24,9 +24,21 @@
     (str "0" hex)
     hex))
 
+(defn pad-to-words [hex word-size]
+  (let [hex (strip0x hex)
+        hex-size (/ word-size 4)
+        padding (- hex-size (mod (count hex) hex-size))]
+    (if (= padding 0)
+      hex
+      (str (apply str (take padding (repeat "f"))) hex))))
+
 (defn hex? [string]
   (and (string? string)
        (re-find #"^(0x)?[0-9a-fA-F]*$" string)))
+
+(defn negative-int? [string]
+  (and (string? string)
+       (re-find #"^(0x)?[8-f]" string)))
 
 (defn prefixed-hex? [string]
   (and (string? string)
@@ -172,7 +184,9 @@
          padded))))
 
 (defn hex->big-integer [hex]
-  #?(:cljs (goog.math.Integer/fromString hex 16)
+  #?(:cljs (if (negative-int? hex)
+             (.add (.not (goog.math.Integer/fromString (pad-to-words hex 32) 16)) goog.math.Integer/ONE)
+             (goog.math.Integer/fromString hex 16))
      :clj  (BigInteger. hex 16)))
 
 (defn- ->big-integer [ba]

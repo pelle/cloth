@@ -1,11 +1,14 @@
 (ns cloth.bytes
   (:require   [cuerdas.core :as c]
     #?@(:cljs [[goog.crypt]
-               [goog.math.Integer]]))
+               [goog.math.Integer]
+               [bn]]))
   #?(:clj
      (:import
        [org.spongycastle.util.encoders Hex]
        [org.spongycastle.util BigIntegers])))
+#?(:cljs
+   (def BN js/BN))
 
 (defn add0x [input]
   (if (string? input)
@@ -23,15 +26,6 @@
   (if (= (mod (count hex) 2) 1)
     (str "0" hex)
     hex))
-
-(defn pad-hex-to-words [hex word-size]
-  (let [hex (strip0x hex)
-        hex-size (/ word-size 4)
-        padding (mod (count hex) hex-size)]
-    (println "padding: " padding)
-    (if (= padding 0)
-      hex
-      (str (apply str (take (- hex-size padding) (repeat "f"))) hex))))
 
 (defn hex? [string]
   (and (string? string)
@@ -186,17 +180,17 @@
 
 (defn hex->int [hex]
   #?(:cljs (if (negative-int? hex)
-             (goog.math.Integer. (js/Int32Array. (aget (->bytes (pad-hex-to-words hex 256)) "buffer")))
-             (goog.math.Integer/fromString hex 16))
+             (let [stripped (strip0x hex)]
+               (.fromTwos (BN. stripped 16) (* 4 (count stripped))))
+             (BN. (strip0x hex) 16))
      :clj  (BigInteger. hex 16)))
 
 (defn hex->uint [hex]
-  #?(:cljs (goog.math.Integer/fromString hex 16)
+  #?(:cljs (BN. (strip0x hex) 16)
      :clj  (BigInteger. hex 16)))
 
-
 (defn- ->big-integer [ba]
-  #?(:cljs (goog.math.Integer/fromNumber ba)
+  #?(:cljs (BN. ba)
      :clj  (biginteger ba)))
 
 (defn ->int [data]
@@ -228,6 +222,6 @@
 
 (defn int->hex [i]
   (let [bi (->big-integer i)]
-    (if (.equals bi zero)
+    (if (.eq bi zero)
       ""
       (pad-to-even (.toString bi 16)))))

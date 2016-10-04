@@ -1,12 +1,12 @@
 (ns cloth.bytes
   (:require   [cuerdas.core :as c]
     #?@(:cljs [[goog.crypt]
-               [goog.math.Integer]
                [bn]]))
   #?(:clj
      (:import
        [org.spongycastle.util.encoders Hex]
        [org.spongycastle.util BigIntegers])))
+
 #?(:cljs
    (def BN js/BN))
 
@@ -75,7 +75,7 @@
     #?(:clj  (.getBytes val)
        :cljs (->uint8-array (goog.crypt/stringToUtf8ByteArray val)))
     (number? val)
-    #?(:cljs (goog.math.Integer/fromNumber val)
+    #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
 (defn strict->bytes
@@ -89,14 +89,14 @@
     #?(:clj  (.getBytes val)
        :cljs (->uint8-array (goog.crypt/stringToUtf8ByteArray val)))
     (number? val)
-    #?(:cljs (goog.math.Integer/fromNumber val)
+    #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
 (defn uint->bytes
   "converts anything into platform native byte array. Non 0x prefixed hex strings are interpreted as strings and as such are not hex decoded"
   [val]
   (let [val (if (nil? val) 0 val)]
-    #?(:cljs (goog.math.Integer/fromNumber val)
+    #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
 (defn ->hex

@@ -1,7 +1,8 @@
 (ns cloth.util
   (:require [cuerdas.core :as c]
             [cloth.bytes :as b :refer [->hex ->bytes pad rpad add0x strip0x]]
-    #?@(:cljs [[ethereumjs-tx]]))
+    #?@(:cljs [[ethereumjs-tx]
+               [sha3]]))
   #?(:clj
      (:import
        [org.ethereum.crypto HashUtil])))
@@ -34,7 +35,7 @@
 
 (defn sha3 [data]
   #?(:cljs
-     ((aget eth-util "sha3") data))
+     (js/keccak_256 data))
   #?(:clj
      (HashUtil/sha3 (b/->bytes data))))
 
@@ -43,11 +44,11 @@
      ((aget eth-util "sha256") data))
   #?(:clj (HashUtil/sha256 (b/->bytes data))))
 
-(defn ripemd160 [data]
-  #?(:cljs
-     ((aget eth-util "ripemd160") data))
-  #?(:clj
-     (HashUtil/ripemd160 (b/->bytes data))))
+;(defn ripemd160 [data]
+;  #?(:cljs
+;     ((aget eth-util "ripemd160") data))
+;  #?(:clj
+;     (HashUtil/ripemd160 (b/->bytes data))))
 
 #?(:cljs
    (defn generate-contract-address

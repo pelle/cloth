@@ -2,6 +2,7 @@
   (:require [cuerdas.core :as c]
             [cloth.bytes :as b :refer [->hex ->bytes pad rpad add0x strip0x]]
     #?@(:cljs [[ethereumjs-tx]
+               [goog.crypt]
                [sha3]]))
   #?(:clj
      (:import
@@ -23,12 +24,6 @@
 ;   (defn biginteger [buffer]
 ;     (BN. (or buffer 0))))
 ;
-;#?(:cljs (def max-int (biginteger (aget js/Number "MAX_SAFE_INTEGER"))))
-;
-;#?(:cljs (defn bn-or-int [bn]
-;           (if (.lte bn max-int)
-;             (.toNumber bn)
-;             bn)))
 ;#?(:cljs
 ;   (defn b/->bytesuffer [val]
 ;     ((aget eth-util "toBuffer") (clj->js val))))
@@ -66,7 +61,7 @@
 
 (defn solidity-int [length val]
   (let [pad (if (neg? val) b/negative-pad pad)]
-    (->hex (pad (b/->bytes val) (/ length 8)))))
+    (->hex (pad (b/int->bytes val) (/ length 8)))))
 
 (defn extract-type [type _]
   (let [ts (name type)]
@@ -161,7 +156,7 @@
   [_ v]
   ;; TODO cljs version
   #?(:cljs
-     (.toString (decode-solidity :bytes v))
+     (goog.crypt/utf8ByteArrayToString (decode-solidity :bytes v))
      :clj
      (String. (decode-solidity :bytes v))))
 

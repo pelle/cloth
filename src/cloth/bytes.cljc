@@ -1,5 +1,5 @@
 (ns cloth.bytes
-  (:require   [cuerdas.core :as c]
+  (:require [cuerdas.core :as c]
     #?@(:cljs [[goog.crypt]
                [bn]]))
   #?(:clj
@@ -9,6 +9,17 @@
 
 #?(:cljs
    (def BN js/BN))
+
+#?(:cljs (def max-int (BN. (aget js/Number "MAX_SAFE_INTEGER"))))
+
+(defn bn-or-int
+  "Returns an integer if possible otherwise a BN. This kind of matches what web3 does"
+  [bn]
+  #?(:cljs
+          (if (.lte bn max-int)
+            (.toNumber bn)
+            bn)
+     :clj bn))
 
 (defn add0x [input]
   (if (string? input)
@@ -46,11 +57,11 @@
 (defn bytes? [a]
   #?(:cljs (= (aget a "constructor" "name")
               "Uint8Array")
-     :clj (clojure.core/bytes? a)))
+     :clj  (clojure.core/bytes? a)))
 
 (defn byte-array [length]
   #?(:cljs (js/Uint8Array. length)
-     :clj (clojure.core/byte-array length)))
+     :clj  (clojure.core/byte-array length)))
 
 (defn even-hex->bytes [data]
   #?(:cljs (->uint8-array (goog.crypt/hexToByteArray data))
@@ -78,6 +89,15 @@
     #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
+#?(:cljs
+   (defn int->bytes
+     "Converts signed integer into bytes using twos complement if negative"
+     [val]
+     (let [bn (BN. val)
+           bn (if (.isNeg bn) (.toTwos bn 256) bn)]
+       (.toArrayLike bn js/Uint8Array))))
+
+
 (defn strict->bytes
   "converts anything into platform native byte array. Non 0x prefixed hex strings are interpreted as strings and as such are not hex decoded"
   [val]
@@ -89,7 +109,7 @@
     #?(:clj  (.getBytes val)
        :cljs (->uint8-array (goog.crypt/stringToUtf8ByteArray val)))
     (number? val)
-    #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
+    #?(:cljs (int->bytes val)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
 (defn uint->bytes
@@ -122,10 +142,14 @@
 #?(:cljs
    (defn clone-and-pad-byte-array
      ([ba l] (clone-and-pad-byte-array ba l true))
-     ([ba l left-pad?]
+     ([ba l left-pad?] (clone-and-pad-byte-array ba l left-pad? 0))
+     ([ba l left-pad? padding]
       (if (< l (alength ba))
         (.slice ba (- (alength ba) l))
         (let [padded (js/Uint8Array. l)
+              padded (if (= padding 0)
+                       padded
+                       (.fill padded padding))
               offset (if left-pad? (- l (alength ba)) 0)]
           (doall
             (for [i (range l)]
@@ -146,12 +170,11 @@
            (java.lang.System/arraycopy ba (- (count ba) l) padded 0 l))
          padded))))
 
-;; TODO figure out what the difference is supposed to be between this and pad
 (defn negative-pad
-  "Left Pads an `Array` or `Buffer` with leading zeros until it has `length` bytes.
+  "Left Pads an `Array` or `Buffer` with leading `ff`s until it has `length` bytes.
    Or it truncates the beginning if it exceeds."
   [ba l]
-  #?(:cljs (clone-and-pad-byte-array ba l))
+  #?(:cljs (clone-and-pad-byte-array ba l true 255))
   #?(:clj
      (if (= (count ba) l)
        ba
@@ -194,29 +217,31 @@
      :clj  (biginteger ba)))
 
 (defn ->int [data]
-  (if data
-    (cond
-      (number? data)
+  (bn-or-int
+    (if data
+      (cond
+        (number? data)
         (->big-integer data)
-      (hex? data)
+        (hex? data)
         (hex->int data)
-      :else
-      (->big-integer (->bytes data)))
-    0))
+        :else
+        (->big-integer (->bytes data)))
+      0)))
 
 (defn ->uint [data]
-  (if data
-    (cond
-      (number? data)
+  (bn-or-int
+    (if data
+      (cond
+        (number? data)
         (->big-integer data)
-      (hex? data)
+        (hex? data)
         (hex->uint data)
-      :else
-      (-> data
-          ->bytes
-          pad-single-byte
-          ->big-integer))
-    0))
+        :else
+        (-> data
+            ->bytes
+            pad-single-byte
+            ->big-integer))
+      0)))
 
 (defonce zero (->big-integer 0))
 

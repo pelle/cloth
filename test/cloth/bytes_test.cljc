@@ -7,7 +7,7 @@
 (defn eq
   [a b]
   #?(:clj  (.equals a (biginteger b))
-     :cljs (.equals a (Integer/fromInt b))))
+     :cljs (= (.toInt a) b)))
 
 (defn hex= [bytes hex]
   (= (b/->hex bytes) hex))

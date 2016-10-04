@@ -24,13 +24,14 @@
     (str "0" hex)
     hex))
 
-(defn pad-to-words [hex word-size]
+(defn pad-hex-to-words [hex word-size]
   (let [hex (strip0x hex)
         hex-size (/ word-size 4)
-        padding (- hex-size (mod (count hex) hex-size))]
+        padding (mod (count hex) hex-size)]
+    (println "padding: " padding)
     (if (= padding 0)
       hex
-      (str (apply str (take padding (repeat "f"))) hex))))
+      (str (apply str (take (- hex-size padding) (repeat "f"))) hex))))
 
 (defn hex? [string]
   (and (string? string)
@@ -183,11 +184,16 @@
            (java.lang.System/arraycopy ba (- (count ba) l) padded 0 l))
          padded))))
 
-(defn hex->big-integer [hex]
+(defn hex->int [hex]
   #?(:cljs (if (negative-int? hex)
-             (.add (.not (goog.math.Integer/fromString (pad-to-words hex 32) 16)) goog.math.Integer/ONE)
+             (goog.math.Integer. (js/Int32Array. (aget (->bytes (pad-hex-to-words hex 256)) "buffer")))
              (goog.math.Integer/fromString hex 16))
      :clj  (BigInteger. hex 16)))
+
+(defn hex->uint [hex]
+  #?(:cljs (goog.math.Integer/fromString hex 16)
+     :clj  (BigInteger. hex 16)))
+
 
 (defn- ->big-integer [ba]
   #?(:cljs (goog.math.Integer/fromNumber ba)
@@ -199,7 +205,7 @@
       (number? data)
         (->big-integer data)
       (hex? data)
-        (hex->big-integer data)
+        (hex->int data)
       :else
       (->big-integer (->bytes data)))
     0))
@@ -210,7 +216,7 @@
       (number? data)
         (->big-integer data)
       (hex? data)
-        (hex->big-integer data)
+        (hex->uint data)
       :else
       (-> data
           ->bytes

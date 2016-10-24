@@ -37,6 +37,7 @@
            (done))))
      :clj
      (let [{:keys [events stop start]} @(filters/new-block-ch)
+           _ @(chain/testrpc-mine!)
            block-hash (<!! events)]
        (stop)
        (is block-hash))))
@@ -61,7 +62,7 @@
            contract (atom nil)
            event-sig (util/encode-event-sig "Issued" [:address :uint32])]
        (async done
-         (-> (core/faucet! 10000000000)
+         (-> (core/faucet! 1000000000000000000)
              (p/then core/when-mined)
              (p/then deploy-simple-token!)
              (p/then (fn [c] (reset! contract c)))
@@ -86,7 +87,8 @@
                         (prn (.-stack e))
                         (done))))))
      :clj
-     (do @(core/faucet! 10000000000)
+     (let [state @(chain/testrpc-snapshot!)]
+       @(core/faucet! 1000000000000000000)
          (let [contract @(deploy-simple-token!)
                recipient (:address (keys/create-keypair))
                event-sig (util/encode-event-sig "Issued" [:address :uint32])
@@ -101,4 +103,5 @@
            (is (= (:tx event)))
            (is (= (:topics event) [event-sig (util/add0x (util/encode-solidity :address recipient))]))
            (is (= (:data event) (util/add0x (util/encode-solidity :uint32 123))))
+           @(chain/testrpc-revert! state)
            ))))

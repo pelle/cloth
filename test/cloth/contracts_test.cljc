@@ -33,7 +33,7 @@
      (let [recipient (:address (keys/create-keypair))
            contract (atom nil)]
        (async done
-         (-> (core/faucet! 10000000000)
+         (-> (core/faucet! 1000000000000000000)
              (p/then core/when-mined)
              (p/then deploy-simple-token!)
              (p/then (fn [c] (reset! contract c)))
@@ -72,7 +72,8 @@
                         (prn (.-stack e))
                         (done))))))
      :clj
-     (do @(core/faucet! 10000000000)
+     (let [state @(chain/testrpc-snapshot!)]
+         @(core/faucet! 1000000000000000000)
          (let [ contract @(deploy-simple-token!)
                 recipient-kp (keys/create-keypair)
                 recipient (:address recipient-kp) ]
@@ -108,15 +109,14 @@
                                         :show-url (fn [url]
                                                     ;(println url)
                                                     (core/sign-and-send! (tx/url->map url) recipient-kp))})
-            @(core/faucet! 10000000000)
+            @(core/faucet! 1000000000000000000)
             (let [other-user (:address (keys/create-keypair))
                   {:keys [events stop start] :as c} @(transferred-ch contract)
                   tx @(transfer!! contract other-user 11)
                   event (<!! events)]
               (stop)
               (is (= event {:sender recipient :recipient other-user :amount 11})))
-
-           ))))
+            @(chain/testrpc-revert! state)))))
 
 
 (c/defcontract constructed "test/cloth/Constructed.sol")
@@ -126,7 +126,7 @@
   #?(:cljs
      (let [contract (atom nil)]
        (async done
-         (-> (core/faucet! 10000000000)
+         (-> (core/faucet! 1000000000000000000)
              (p/then core/when-mined)
              (p/then #(deploy-constructed! "Hello"))
              (p/then (fn [c] (reset! contract c)))
@@ -140,9 +140,11 @@
                         (done)))
              )))
      :clj
-     (do @(core/faucet! 10000000000)
+     (let [state @(chain/testrpc-snapshot!)]
+       @(core/faucet! 1000000000000000000)
          (let [ contract @(deploy-constructed! "Hello")]
            (is contract)
            (is (= @(status contract) "Hello"))
+           @(chain/testrpc-revert! state)
            ))))
 

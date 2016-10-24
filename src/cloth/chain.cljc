@@ -193,3 +193,30 @@
 (defn uninstall-filter [id]
   (ethrpc "eth_uninstallFilter" id))
 
+(defn testrpc-snapshot!
+  "Snapshot the state of the blockchain at the current block. Takes no parameters. Returns the integer id of the snapshot created.
+
+  TESTRPC only"
+  []
+  (ethrpc "evm_snapshot"))
+
+(defn testrpc-revert!
+  "Revert the state of the blockchain to a previous snapshot. Takes a single parameter, which is the snapshot id to revert to. If no snapshot id is passed it will revert to the latest snapshot. Returns true.
+
+  TESTRPC only"
+  [id]
+  (ethrpc "evm_revert" id))
+
+(defn testrpc-mine!
+  "Force a block to be mined. Takes no parameters. Mines a block independent of whether or not mining is started or stopped.
+
+  TESTRPC only"
+  []
+  (ethrpc "evm_mine"))
+
+(defn testrpc-increase-time!
+  "Jump forward in time. Takes one parameter, which is the amount of time to increase in seconds. Returns the total time adjustment, in seconds.
+
+  TESTRPC only"
+  [seconds]
+  (ethrpc "evm_increaseTime" seconds))

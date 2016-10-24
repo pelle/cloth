@@ -1,6 +1,5 @@
 (ns cloth.keys-test
   (:require [cloth.keys :as keys]
-            [cloth.util :as util]
             [cloth.bytes :as b]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
@@ -13,12 +12,12 @@
    (deftest test-secp256k
      (is keys/secp256k1)))
 ;
-#?(:cljs
-   (deftest test-verify-private-key
-     (is keys/verify-private-key)
-     (is (not (keys/verify-private-key "sdfsdfs")))
-     (let [key (keys/random-bytes)]
-       (is (keys/verify-private-key key)))))
+;#?(:cljs
+;   (deftest test-verify-private-key
+;     (is keys/verify-private-key)
+;     (is (not (keys/verify-private-key "sdfsdfs")))
+;     (let [key (keys/random-bytes)]
+;       (is (keys/verify-private-key key)))))
 
 (deftest test-create-keypair
   (let [keypair (keys/create-keypair)]

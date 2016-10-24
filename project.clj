@@ -13,6 +13,7 @@
                  [clj-time "0.12.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [byte-streams "0.2.2"]
+                 [secp256k1 "1.0.3"]
                  [com.cemerick/url "0.1.1"]
                  ;[cljsjs/bignumber "2.1.4-1"]
                  [cheshire "5.6.3"]

@@ -61,7 +61,7 @@
 
 (defn solidity-int [length val]
   (let [pad (if (neg? val) b/negative-pad pad)]
-    (->hex (pad (b/int->bytes val) (/ length 8)))))
+    (->hex (pad (b/->bytes val) (/ length 8)))))
 
 (defn extract-type [type _]
   (let [ts (name type)]

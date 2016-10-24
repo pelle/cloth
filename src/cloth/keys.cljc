@@ -13,22 +13,17 @@
    (defn random-bytes
      ([] (random-bytes 32))
      ([length]
-      (util/Buffer. (. js/window.crypto getRandomValues (js/Uint8Array. length))))))
+      (. js/window.crypto getRandomValues (js/Uint8Array. length)))))
 
-#?(:cljs
-   (defn verify-private-key [key]
-     (try
-       ((aget secp256k1 "privateKeyVerify") key)
-       (catch js/TypeError e nil))))
+;#?(:cljs
+;   (defn verify-private-key [key]
+;     (try
+;       ((aget secp256k1 "privateKeyVerify") key)
+;       (catch js/TypeError e nil))))
 
 (defn create-private-key []
-  #?(:cljs
-     (loop []
-       (let [key (random-bytes)]
-         (if-not (verify-private-key key)
-           (recur)
-           key))))
-  #?(:clj (ECKey.)))
+  #?(:cljs (random-bytes)
+     :clj (ECKey.)))
 
 #?(:cljs
    (defn ->public-key [private-key]
@@ -48,7 +43,6 @@
      (if (instance? ECKey b)
        b
        (ECKey/fromPrivate b))))
-
 
 (defn keypair
   ([b]

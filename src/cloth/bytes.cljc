@@ -59,7 +59,7 @@
               "Uint8Array")
      :clj  (clojure.core/bytes? a)))
 
-(defn byte-array [length]
+(defn byte-array! [length]
   #?(:cljs (js/Uint8Array. length)
      :clj  (clojure.core/byte-array length)))
 
@@ -137,7 +137,7 @@
   [length]
   #?(:cljs
      (js/Uint8Array. length))
-  #?(:clj (byte-array length)))
+  #?(:clj (byte-array! length)))
 
 #?(:cljs
    (defn clone-and-pad-byte-array
@@ -164,7 +164,7 @@
   #?(:clj
      (if (= (count ba) l)
        ba
-       (let [padded (byte-array l)]
+       (let [padded (byte-array! l)]
          (if (> l (count ba))
            (java.lang.System/arraycopy ba 0 padded (- l (count ba)) (count ba))
            (java.lang.System/arraycopy ba (- (count ba) l) padded 0 l))
@@ -195,7 +195,7 @@
   #?(:clj
      (if (= (count ba) l)
        ba
-       (let [padded (byte-array l)]
+       (let [padded (byte-array! l)]
          (if (> l (count ba))
            (java.lang.System/arraycopy ba 0 padded 0 (count ba))
            (java.lang.System/arraycopy ba (- (count ba) l) padded 0 l))
@@ -206,15 +206,19 @@
              (let [stripped (strip0x hex)]
                (.fromTwos (BN. stripped 16) (* 4 (count stripped))))
              (BN. (strip0x hex) 16))
-     :clj  (BigInteger. hex 16)))
+     :clj  (BigInteger. (->bytes hex))))
 
 (defn hex->uint [hex]
   #?(:cljs (BN. (strip0x hex) 16)
-     :clj  (BigInteger. hex 16)))
+     :clj  (BigInteger. (strip0x hex) 16)))
 
-(defn- ->big-integer [ba]
+(defn ->big-integer [ba]
   #?(:cljs (BN. ba)
      :clj  (biginteger ba)))
+
+(defn bi-eq [a b]
+  #?(:cljs (.eq a b)
+     :clj (.equals a b)))
 
 (defn ->int [data]
   (bn-or-int
@@ -247,6 +251,6 @@
 
 (defn int->hex [i]
   (let [bi (->big-integer i)]
-    (if (.eq bi zero)
+    (if (bi-eq bi zero)
       ""
       (pad-to-even (.toString bi 16)))))

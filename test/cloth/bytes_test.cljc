@@ -28,15 +28,15 @@
   (is (b/hex? "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8")))
 
 (deftest test->hex
-  (is (= (b/->hex (b/byte-array 0)) ""))
-  (is (= (b/->hex (b/byte-array 4)) "00000000"))
+  (is (= (b/->hex (b/byte-array! 0)) ""))
+  (is (= (b/->hex (b/byte-array! 4)) "00000000"))
   (is (= (b/->hex "00000000") "00000000"))
   (is (= (b/->hex "0x00000000") "00000000"))
   (is (= (b/->hex "Hello") "48656c6c6f")))
 
 (deftest test->bytes
-  (is (hex= (b/->bytes (b/byte-array 0)) ""))
-  (is (hex= (b/->bytes (b/byte-array 4)) "00000000"))
+  (is (hex= (b/->bytes (b/byte-array! 0)) ""))
+  (is (hex= (b/->bytes (b/byte-array! 4)) "00000000"))
   (is (hex= (b/->bytes "00000000") "00000000"))
   (is (hex= (b/->bytes "0x00000000") "00000000"))
   (is (hex= (b/->bytes "Hello") "48656c6c6f")))

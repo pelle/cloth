@@ -34,7 +34,7 @@
   (is (= (util/encode-solidity :int32 0) "0000000000000000000000000000000000000000000000000000000000000000"))
 
   (is (= (util/encode-solidity :int32 -1) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
-  (is (= (util/encode-solidity :int32 -16772216)                                      "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388"))
+  (is (= (util/encode-solidity :int32 -16772216) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388"))
   (is (= (util/encode-solidity :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd") "0000000000000000000000002036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"))
 
 

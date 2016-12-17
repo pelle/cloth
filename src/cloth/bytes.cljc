@@ -75,6 +75,8 @@
       pad-to-even
       even-hex->bytes))
 
+(declare int->bytes)
+
 (defn ->bytes
   "converts anything into platform native byte array. Any string that looks like a hex is converted into bytes as if it was hex"
   [val]
@@ -89,14 +91,6 @@
     #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
-#?(:cljs
-   (defn int->bytes
-     "Converts signed integer into bytes using twos complement if negative"
-     [val]
-     (let [bn (BN. val)
-           bn (if (.isNeg bn) (.toTwos bn 256) bn)]
-       (.toArrayLike bn js/Uint8Array))))
-
 
 (defn strict->bytes
   "converts anything into platform native byte array. Non 0x prefixed hex strings are interpreted as strings and as such are not hex decoded"
@@ -110,13 +104,6 @@
        :cljs (->uint8-array (goog.crypt/stringToUtf8ByteArray val)))
     (number? val)
     #?(:cljs (int->bytes val)
-       :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
-
-(defn uint->bytes
-  "converts anything into platform native byte array. Non 0x prefixed hex strings are interpreted as strings and as such are not hex decoded"
-  [val]
-  (let [val (if (nil? val) 0 val)]
-    #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
 (defn ->hex
@@ -184,6 +171,7 @@
            (java.lang.System/arraycopy ba (- (count ba) l) padded 0 l))
          padded))))
 
+
 (defn pad-single-byte [ba]
   (pad ba (inc (alength ba))))
 
@@ -200,6 +188,24 @@
            (java.lang.System/arraycopy ba 0 padded 0 (count ba))
            (java.lang.System/arraycopy ba (- (count ba) l) padded 0 l))
          padded))))
+
+(defn uint->bytes
+  "converts anything into platform native byte array. Non 0x prefixed hex strings are interpreted as strings and as such are not hex decoded"
+  [val]
+  (let [val (if (nil? val) 0 val)]
+    #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
+       :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
+
+(defn int->bytes
+  "Converts signed integer into bytes using twos complement if negative"
+  [val]
+  #?(:cljs
+          (let [bn (BN. val)
+                bn (if (.isNeg bn) (.toTwos bn 256) bn)]
+            (.toArrayLike bn js/Uint8Array))
+     :clj (if (neg? val)
+            (negative-pad (.toByteArray (biginteger val)) 32)
+            (uint->bytes val))))
 
 (defn hex->int [hex]
   #?(:cljs (if (negative-int? hex)
@@ -253,4 +259,4 @@
   (let [bi (->big-integer i)]
     (if (bi-eq bi zero)
       ""
-      (pad-to-even (.toString bi 16)))))
+      (pad-to-even (->hex (int->bytes bi))))))

@@ -71,4 +71,6 @@
 (deftest test-int->hex
   (is (= (b/int->hex 0) ""))
   (is (= (b/int->hex 1) "01"))
-  (is (= (b/int->hex 65280) "ff00")))
+  (is (= (b/int->hex 65280) "ff00"))
+  (is (= (b/int->hex -1) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
+  (is (= (b/int->hex -16772216) "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff001388")))

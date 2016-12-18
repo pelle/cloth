@@ -1,16 +1,12 @@
 (ns cloth.tx
-  (:require #?@(:cljs [ethereumjs-tx])
+  (:require
     [cloth.util :as util]
+    [cloth.util :as rlp]
     [cloth.bytes :as b]
     [clojure.walk :refer [keywordize-keys]]
     [cloth.keys :as keys]
     [cuerdas.core :as c]
-    [cemerick.url :as url])
-  #?(:clj
-     (:import [org.ethereum.core Transaction])))
-
-#?(:cljs
-   (def Tx (aget util/eth-js "Tx")))
+    [cemerick.url :as url]))
 
 (defn map->tx [params]
   (reduce #(assoc % (keyword (c/camel (name (key %2))))
@@ -65,16 +61,18 @@
       )))
 
 (defn create [params]
-  #?(:cljs
-     (Tx. (clj->js (map->tx params))))
-  #?(:clj
-     (let [{:keys [to value nonce gas-price gas-limit data] :as tx} params]
-       (Transaction. (if nonce (b/->bytes nonce))
-                     (if gas-price (b/->bytes gas-price))
-                     (if gas-limit (b/->bytes gas-limit))
-                     (if to (b/->bytes to))
-                     (if value (b/->bytes value))
-                     (if data (b/->bytes data))))))
+  )
+;(defn create [params]
+;  #?(:cljs
+;     (Tx. (clj->js (map->tx params))))
+;  #?(:clj
+;     (let [{:keys [to value nonce gas-price gas-limit data] :as tx} params]
+;       (Transaction. (if nonce (b/->bytes nonce))
+;                     (if gas-price (b/->bytes gas-price))
+;                     (if gas-limit (b/->bytes gas-limit))
+;                     (if to (b/->bytes to))
+;                     (if value (b/->bytes value))
+;                     (if data (b/->bytes data))))))
 
 (defn recipient [tx]
   (->

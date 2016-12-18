@@ -4,8 +4,8 @@
                [bn]]))
   #?(:clj
      (:import
-       [org.spongycastle.util.encoders Hex]
-       [org.spongycastle.util BigIntegers])))
+       [org.bouncycastle.util.encoders Hex]
+       [org.bouncycastle.util BigIntegers])))
 
 #?(:cljs
    (def BN js/BN))

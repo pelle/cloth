@@ -11,9 +11,6 @@
      :cljs (.eq (b/->big-integer a)
                 (b/->big-integer b))))
 
-(deftest test-sha3
-  (is (= (b/->hex (util/sha3 "hello")) "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8")))
-
 (deftest encode-solidity-tests
   (is (= (util/encode-solidity :bool true) "0000000000000000000000000000000000000000000000000000000000000001"))
   (is (= (util/encode-solidity :bool false) "0000000000000000000000000000000000000000000000000000000000000000"))

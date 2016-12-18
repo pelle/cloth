@@ -1,6 +1,4 @@
-{:foreign-libs [{:file     "ethereumjs-tx/ethereumjs-tx.js"
-                 :provides ["ethereumjs-tx"]}
-                {:file "bn/bn.js"
+{:foreign-libs [{:file "bn/bn.js"
                  :provides ["bn"]}
                 {:file "sha3/sha3.js"
                  :provides ["sha3"]}]

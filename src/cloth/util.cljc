@@ -1,49 +1,7 @@
 (ns cloth.util
   (:require [cuerdas.core :as c]
-            [cloth.bytes :as b :refer [->hex ->bytes pad rpad add0x strip0x]]
-    #?@(:cljs [[ethereumjs-tx]
-               [goog.crypt]
-               [sha3]]))
-  #?(:clj
-     (:import
-       [org.ethereum.crypto HashUtil])))
-
-#?(:cljs
-   (def eth-js js/EthJS))
-
-#?(:cljs
-   (def eth-util (aget eth-js "Util")))
-
-#?(:cljs
-   (def Buffer (aget eth-js "Buffer" "Buffer")))
-;
-;#?(:cljs
-;   (def BN (aget eth-js "BN")))
-;
-;#?(:cljs
-;   (defn biginteger [buffer]
-;     (BN. (or buffer 0))))
-;
-;#?(:cljs
-;   (defn b/->bytesuffer [val]
-;     ((aget eth-util "toBuffer") (clj->js val))))
-
-(defn sha3 [data]
-  #?(:cljs
-     (js/keccak_256 data))
-  #?(:clj
-     (HashUtil/sha3 (b/->bytes data))))
-
-(defn sha256 [data]
-  #?(:cljs
-     ((aget eth-util "sha256") data))
-  #?(:clj (HashUtil/sha256 (b/->bytes data))))
-
-;(defn ripemd160 [data]
-;  #?(:cljs
-;     ((aget eth-util "ripemd160") data))
-;  #?(:clj
-;     (HashUtil/ripemd160 (b/->bytes data))))
+            [cloth.digests :as d :refer [sha3]]
+            [cloth.bytes :as b :refer [->hex ->bytes pad rpad add0x strip0x]]))
 
 #?(:cljs
    (defn generate-contract-address

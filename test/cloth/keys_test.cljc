@@ -12,7 +12,14 @@
 (deftest test-keypair
   (is (= (keys/keypair "0xa285ab66393c5fdda46d6fbad9e27fafd438254ab72ad5acb681a0e9f20f5d7b")
          {:private-key "0xa285ab66393c5fdda46d6fbad9e27fafd438254ab72ad5acb681a0e9f20f5d7b"
-          :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"})))
+          :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"}))
+  (is (= (keys/keypair "0x0a72410411a3f4379db21742d3fb7e93611d4cce6000ee08b29a79bcb3943562")
+         {:private-key "0x0a72410411a3f4379db21742d3fb7e93611d4cce6000ee08b29a79bcb3943562"
+          :address "0x3563bfb5ece3a9cd41c90a4d6863f68358e6d52b"}))
+  (is (= (keys/keypair "0xa285ab66393c5fdda46d6fbad9e27fafd438254ab72ad5acb681a0e9f20f5d7b")
+         {:private-key "0xa285ab66393c5fdda46d6fbad9e27fafd438254ab72ad5acb681a0e9f20f5d7b"
+          :address "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"}))
+  )
 
 (deftest test-priv->address
   (is (= (keys/->address (keys/->public-key "0x0a72410411a3f4379db21742d3fb7e93611d4cce6000ee08b29a79bcb3943562"))
@@ -22,7 +29,9 @@
 
 (deftest test->public-key
   (is (= (b/->hex (keys/->public-key "0xb23bcd7473ad6a707674db855bce324a2fe8d5bde5ce46fb5e15b704e8b0a9ad"))
-         "0410289ff30f686e1ed76b6814ace80778dd604d002c9169b9f2054e4033582eae88745bc33198b30c90cc1b7207969ed1797dfd918024307a7f12918869be0d63")))
+         "0410289ff30f686e1ed76b6814ace80778dd604d002c9169b9f2054e4033582eae88745bc33198b30c90cc1b7207969ed1797dfd918024307a7f12918869be0d63"))
+  (is (= (b/->hex (keys/->public-key "0x0a72410411a3f4379db21742d3fb7e93611d4cce6000ee08b29a79bcb3943562"))
+         "043d2dd7c9f29045f597ba186dfddcc6f869fd94268eb879dd4d66910e946f56e60006d39ca643e9bb164d20a45613ac5be87372f65eb9c4dac57b9af8e097ece2")))
 
 (deftest test->address
   (is (= (keys/->address {:private-key "0xb23bcd7473ad6a707674db855bce324a2fe8d5bde5ce46fb5e15b704e8b0a9ad"})

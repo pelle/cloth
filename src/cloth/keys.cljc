@@ -17,7 +17,7 @@
 
 (defn ->public-key [private-key]
    (-> private-key
-       (b/->bytes)
+       (b/->hex)
        (ecc/private-key)
        (ecc/public-key)
        (ecc/x962-encode :compressed false)
@@ -32,7 +32,7 @@
 
 (defn keypair
   [private-key]
-  (let [public-key (b/add0x (->public-key (b/->bytes private-key)))]
+  (let [public-key (b/add0x (->public-key (b/strip0x private-key)))]
     {:private-key (b/add0x private-key)
      :address     (->address public-key)}))
 

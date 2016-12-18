@@ -91,14 +91,6 @@
     #?(:cljs (.toArrayLike (BN. val) js/Uint8Array)
        :clj  (BigIntegers/asUnsignedByteArray (biginteger val)))))
 
-
-(defn strict-bytes
-  "ensures that byte array is correct unsigned byte array" [ba]
-  #?(:clj (if (bytes? ba) ba)
-     :cljs (if (bytes? ba)
-             ba
-             (->uint8-array ba)))
-  )
 (defn strict->bytes
   "converts anything into platform native byte array. Non 0x prefixed hex strings are interpreted as strings and as such are not hex decoded"
   [val]

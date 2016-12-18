@@ -44,18 +44,20 @@
                        :figwheel     true
                        :compiler     {:optimizations :none
                                       :main          cloth.core
+                                      :source-map true
                                       :asset-path "js/out"
                                       :output-to "resources/public/js/cloth.js"
                                       :output-dir "resources/public/js/out"}}
             :test     {:source-paths ["src" "test"]
                        :compiler     {:output-to     "out/testable.js"
-                                      :main          cloth.runner
+                                      :main          "cloth.runner"
                                       :source-map    true
                                       :optimizations :none}}
-            :advanced {:source-paths ["src" "test"]
-                       :compiler     {:output-to     "out/testable.js"
-                                      :main          "cloth.do-runner"
-                                      :optimizations :advanced}}}}
+            ;:advanced {:source-paths ["src" "test"]
+            ;           :compiler     {:output-to     "out/testable.js"
+            ;                          :main          "cloth.do-runner"
+            ;                          :optimizations :advanced}}
+            }}
   :doo {:build "test"}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release" "target"]

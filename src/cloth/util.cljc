@@ -154,11 +154,7 @@
 
 (defmethod decode-solidity :string
   [_ v]
-  ;; TODO cljs version
-  #?(:cljs
-     (goog.crypt/utf8ByteArrayToString (decode-solidity :bytes v))
-     :clj
-     (String. (decode-solidity :bytes v))))
+  (b/->str (decode-solidity :bytes v)))
 
 (defmethod decode-solidity :bool
   [_ v]

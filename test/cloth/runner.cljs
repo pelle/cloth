@@ -20,6 +20,6 @@
            ;'cloth.tx-test
            ;'cloth.net-test
            ;'cloth.filters-test
-          ;'cloth.rlp-test
+          'cloth.rlp-test
            )
 

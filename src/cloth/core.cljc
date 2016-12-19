@@ -99,7 +99,7 @@
     (fetch-defaults signer)
     (p/mapcat #(estimate-gas (merge t % {:from (:address signer)})))
     (p/mapcat
-      #(-> (tx/create-and-sign % (keys/get-private-key signer))
+      #(-> (tx/sign % (keys/get-private-key signer))
            ;spytx
            (tx/->hex)
            (chain/send-raw-transaction)))))

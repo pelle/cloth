@@ -3,6 +3,7 @@
             [cloth.keys :as keys]
             [cloth.util :as util]
             [cloth.bytes :as b]
+            [cloth.rlp :as rlp]
     #?@(:cljs [[cljs.test :refer-macros [is are deftest testing use-fixtures]]]
         :clj  [[clojure.test :refer [is are deftest testing use-fixtures]]])))
 
@@ -13,18 +14,18 @@
   (is (= (tx/map->tx {}) {}))
   (is (= (tx/map->tx {:gas-price 123 :to "00"}) {:gasPrice 123 :to "0x00"})))
 
-(deftest create-test
-  (is (= (tx/tx->map (tx/create {})) {:to "0x00", :data nil, :nonce 0, :gas-price 0, :gas-limit 0, :value 0}))
-  (is (= (tx/tx->map (tx/create {:to    "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
-                                 :value 1231}))
-         {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd", :data nil, :nonce 0, :gas-price 0, :gas-limit 0, :value 1231}))
-  (is (= (tx/tx->map (tx/create {:to        "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
-                                 :nonce     1
-                                 :gas-limit 123123
-                                 :gas-price 2000
-                                 :data      "0x00"
-                                 :value     1231}))
-         {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd", :data "0x00", :nonce 1, :gas-price 2000, :gas-limit 123123, :value 1231})))
+;(deftest create-test
+;  (is (= (tx/tx->map (tx/create {})) {:to "0x00", :data nil, :nonce 0, :gas-price 0, :gas-limit 0, :value 0}))
+;  (is (= (tx/tx->map (tx/create {:to    "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
+;                                 :value 1231}))
+;         {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd", :data nil, :nonce 0, :gas-price 0, :gas-limit 0, :value 1231}))
+;  (is (= (tx/tx->map (tx/create {:to        "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
+;                                 :nonce     1
+;                                 :gas-limit 123123
+;                                 :gas-price 2000
+;                                 :data      "0x00"
+;                                 :value     1231}))
+;         {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd", :data "0x00", :nonce 1, :gas-price 2000, :gas-limit 123123, :value 1231})))
 
 (deftest map->url-test
   (is (= (tx/map->url nil) nil))
@@ -50,16 +51,15 @@
   (is (= (tx/url->map "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?gas=200000") {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :gas-limit 200000}))
   (is (= (tx/url->map "ethereum:0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd?label=Bob%20Smith&value=200000123") {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd" :value 200000123N :label "Bob Smith"})))
 
-
 (deftest sign-test
   (let [private (keys/get-private-key kp)
-        signed (-> (tx/create {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
-                               :nonce 1
-                               :gas-limit 123123
-                               :gas-price 2000
-                               :data "0x00"
-                               :value 1231})
-                 (tx/sign private))]
+        signed (tx/sign {:to "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
+                         :nonce 1
+                         :gas-limit 123123
+                         :gas-price 2000
+                         :data "0x00"
+                         :value 1231}
+                        private)]
     (is (= (tx/tx->map signed)
            {:to   "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd",
             :from (:address kp)
@@ -67,16 +67,32 @@
 
 (deftest ->hex-test
   (let [private (keys/get-private-key kp)
-        signed (-> (tx/create {:to        "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
-                               :nonce     1
-                               :gas-limit 123123
-                               :gas-price 2000
-                               :data      "0x00"
-                               :value     1231})
-                   (tx/sign private))]
-    (is (= (tx/->hex signed)
+        signed (tx/sign {:to        "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
+                         :nonce     1
+                         :gas-limit 123123
+                         :gas-price 2000
+                         :data      "0x00"
+                         :value     1231}
+                        private)]
+    (is (= signed
            "0xf864018207d08301e0f3942036c6cd85692f0fb2c26e6c6b2eced9e4478dfd8204cf001ca0d8b8f26cf8951c7653137ea028b7a8dea03c75df792ece0c40401081eba24d2ca035d5b02f1372091e7aa1b251a803f6a4513e7dfbf58be22995a0ea61cdee6789"))))
-
+;
 ;; TODO write tests for these
 (deftest test-fn-tx)
 (deftest test-contract-tx)
+
+(deftest decode-transaction
+  (is (= (tx/decode "0xf864018207d08301e0f3942036c6cd85692f0fb2c26e6c6b2eced9e4478dfd8204cf001ca0d8b8f26cf8951c7653137ea028b7a8dea03c75df792ece0c40401081eba24d2ca035d5b02f1372091e7aa1b251a803f6a4513e7dfbf58be22995a0ea61cdee6789")
+         {:to        "0x2036c6cd85692f0fb2c26e6c6b2eced9e4478dfd"
+          :nonce     1
+          :gas-limit 123123
+          :gas-price 2000
+          :data      "0x00"
+          :value     1231
+          :v "0x1c"
+          :r "0xd8b8f26cf8951c7653137ea028b7a8dea03c75df792ece0c40401081eba24d2c"
+          :s "0x35d5b02f1372091e7aa1b251a803f6a4513e7dfbf58be22995a0ea61cdee6789"
+          })))
+
+"0xf866018207d08301e0f3942036c6cd85692f0fb2c26e6c6b2eced9e4478dfd8204cf001ca0795a74a0be8ee6bb327b24e52fbcc14b780adc5e61f280db191fa4ebbf220cbea0686c56556ef8085c9825155b65501a3fd7fbd45211eac25f020b35d41e05c452"
+"0xf864018207d08301e0f3942036c6cd85692f0fb2c26e6c6b2eced9e4478dfd8204cf001ca0d8b8f26cf8951c7653137ea028b7a8dea03c75df792ece0c40401081eba24d2ca035d5b02f1372091e7aa1b251a803f6a4513e7dfbf58be22995a0ea61cdee6789"

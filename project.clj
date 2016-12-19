@@ -1,22 +1,22 @@
-(defproject cloth "0.3.1"
+(defproject cloth "0.4.0-SNAPSHOT"
   :description "Clojure(Script) tools for Ethereum"
   :url "https://github.com/pelle/cloth"
   :dependencies [[org.clojure/clojure "1.9.0-alpha8"]
-                 [org.clojure/clojurescript "1.9.229"]
-                 [org.clojure/core.async "0.2.391"]
+                 [org.clojure/clojurescript "1.9.293"]
+                 [org.clojure/core.async "0.2.395"]
                  [funcool/cats "2.0.0"]
-                 [funcool/promesa "1.5.0"]
+                 [funcool/promesa "1.6.0"]
                  [funcool/httpurr "0.6.2"]
-                 [aleph "0.4.1" :scope "provided"]
-                 [funcool/cuerdas "1.0.2"]
-                 [org.ethereum/ethereumj-core "1.2.0-RELEASE"]
-                 [clj-time "0.12.0"]
+                 [aleph "0.4.2-alpha10"]
+                 [funcool/cuerdas "2.0.1"]
+                 [clj-time "0.12.2"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [byte-streams "0.2.2"]
+                 [secp256k1 "1.0.3"]
+                 [org.bouncycastle/bcprov-jdk15on "1.55"]
                  [com.cemerick/url "0.1.1"]
-                 ;[cljsjs/bignumber "2.1.4-1"]
-
-                 [cheshire "5.6.3"]]
+                 [cheshire "5.6.3"]
+                 [funcool/octet "1.0.1"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :plugins [[lein-npm "0.6.1"]
             [lein-cljsbuild "1.1.3"]
@@ -31,11 +31,6 @@
                        [derequire "2.0.3"]
                        [browser-builds "pelle/browser-builds#babelify"]]}
 
-  ;; NOT WORKING
-  :aliases {"build-ethjs" ^{:doc "Build version of ethereumjs-tx"}
-                          ["shell"
-                           "cat" "node_modules/browser-builds/dist/ethereumjs-tx.js" "|" "derequire"
-                                  ">src/ethereumjs-tx/ethereumjs-tx.js"]}
   :profiles {:dev {:plugins [[lein-auto "0.1.2"]
                              [lein-shell "0.5.0"]]}}
   :cljsbuild
@@ -43,18 +38,20 @@
                        :figwheel     true
                        :compiler     {:optimizations :none
                                       :main          cloth.core
+                                      :source-map true
                                       :asset-path "js/out"
                                       :output-to "resources/public/js/cloth.js"
                                       :output-dir "resources/public/js/out"}}
             :test     {:source-paths ["src" "test"]
                        :compiler     {:output-to     "out/testable.js"
-                                      :main          cloth.runner
+                                      :main          "cloth.runner"
                                       :source-map    true
                                       :optimizations :none}}
-            :advanced {:source-paths ["src" "test"]
-                       :compiler     {:output-to     "out/testable.js"
-                                      :main          "cloth.do-runner"
-                                      :optimizations :advanced}}}}
+            ;:advanced {:source-paths ["src" "test"]
+            ;           :compiler     {:output-to     "out/testable.js"
+            ;                          :main          "cloth.do-runner"
+            ;                          :optimizations :advanced}}
+            }}
   :doo {:build "test"}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release" "target"]

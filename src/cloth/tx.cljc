@@ -1,21 +1,20 @@
 (ns cloth.tx
-  (:require #?@(:cljs [ethereumjs-tx])
+  (:require
     [cloth.util :as util]
+    [cloth.rlp :as rlp]
+    [secp256k1.core :as ecc]
+    [secp256k1.formatting.der-encoding :as der]
+    [cloth.bytes :as b]
     [clojure.walk :refer [keywordize-keys]]
     [cloth.keys :as keys]
     [cuerdas.core :as c]
-    [cemerick.url :as url])
-  #?(:clj
-     (:import [org.ethereum.core Transaction])))
-
-#?(:cljs
-   (def Tx (aget util/eth-js "Tx")))
+    [cemerick.url :as url]))
 
 (defn map->tx [params]
   (reduce #(assoc % (keyword (c/camel (name (key %2))))
                     (if (= (key %2) :function)
                       (val %2)
-                      (util/add0x (val %2))))
+                      (b/add0x (val %2))))
           {} params))
 
 (defn map->url [params]
@@ -64,96 +63,89 @@
       )))
 
 (defn create [params]
-  #?(:cljs
-     (Tx. (clj->js (map->tx params))))
-  #?(:clj
-     (let [{:keys [to value nonce gas-price gas-limit data] :as tx} params]
-       (Transaction. (if nonce (util/int->b nonce))
-                     (if gas-price (util/int->b gas-price))
-                     (if gas-limit (util/int->b gas-limit))
-                     (if to (util/hex-> to))
-                     (if value (util/int->b value))
-                     (if data (util/hex-> data))))))
+  (mapv
+    (fn [tx type] (b/->bytes (:type params)))
+    [:nonce :gas-price :gas-limit :to :value :data]))
 
-(defn recipient [tx]
-  (->
-    #?(:cljs (if (> (.-length (.-to tx)) 0) (.-to tx) (util/zeros 1)))
-    #?(:clj (.getReceiveAddress tx))
-    (util/->hex)
-    (util/add0x)))
+;(defn create [params]
+;  #?(:cljs
+;     (Tx. (clj->js (map->tx params))))
+;  #?(:clj
+;     (let [{:keys [to value nonce gas-price gas-limit data] :as tx} params]
+;       (Transaction. (if nonce (b/->bytes nonce))
+;                     (if gas-price (b/->bytes gas-price))
+;                     (if gas-limit (b/->bytes gas-limit))
+;                     (if to (b/->bytes to))
+;                     (if value (b/->bytes value))
+;                     (if data (b/->bytes data))))))
+
+
+(defn decode [rawtx]
+  (let [t (rlp/decode (b/->bytes rawtx))]
+    {:nonce     (get t 0)
+     :gas-price (b/->uint (get t 1))
+     :gas-limit (b/->uint (get t 2))
+     :to        (b/add0x (b/->hex (get t 3)))
+     :value     (b/->uint (get t 4))
+     :data      (b/add0x (b/->hex (get t 5)))
+     :v         (b/add0x (b/->hex (get t 6)))
+     :r         (b/add0x (b/->hex (get t 7)))
+     :s         (b/add0x (b/->hex (get t 8)))}))
+
+(defn- base-fields [tx]
+  [(b/uint->bytes (:nonce tx 0))
+   (b/uint->bytes (:gas-price tx 0))
+   (b/uint->bytes (:gas-limit tx 0))
+   (b/->bytes (:to tx "0x00"))
+   (b/uint->bytes (:value tx 0))
+   (b/->bytes (:data tx "0x00"))])
+
+(defn encode [tx]
+  (let [fields (base-fields tx)
+        fields (if (:v tx)
+                 (concat [(b/->bytes (:v tx))
+                          (b/->bytes (:r tx))
+                          (b/->bytes (:s tx))])
+                 fields)]
+    (b/add0x (b/->hex (rlp/encode fields)))))
 
 (defn sender [tx]
-  (-> #?(:cljs (if (.verifySignature tx)
-                 (.getSenderAddress tx)))
-      #?(:clj (if (.getSignature tx)
-                (.getSender tx)))
-      (util/->hex)
-      (util/add0x)))
-
-(defn data [tx]
-  (-> #?(:cljs (if (> (.-length (.-data tx)) 0) (.-data tx)))
-      #?(:clj (.getData tx))
-      (util/->hex)
-      (util/add0x)))
-
-(defn nonce [tx]
-  (-> #?(:cljs (.-nonce tx))
-      #?(:clj (.getNonce tx))
-      (util/b->uint)))
-
-(defn gas-price [tx]
-  (->
-    #?(:cljs (.-gasPrice tx))
-    #?(:clj (.getGasPrice tx))
-    (util/b->uint)))
-
-(defn gas-limit [tx]
-  (-> #?(:cljs (.-gasLimit tx))
-      #?(:clj (.getGasLimit tx))
-      (util/b->uint)))
-
-(defn value [tx]
-  (-> #?(:cljs (.-value tx))
-      #?(:clj (.getValue tx))
-      (util/b->uint)))
-
+  (let [input (b/->hex (rlp/encode (base-fields tx)))
+        signature (der/DER-encode-ECDSA-signature {:recover (b/->bytes (:v tx))
+                                                   :R       (b/->bytes (:r tx))
+                                                   :S       (b/->bytes (:s tx))})
+        public  (ecc/recover-public-key input signature)]
+    (println "pub: " public)
+    (keys/->address (b/add0x public))
+    )
+  )
 (defn tx->map [tx]
   (when tx
-    (let [m {:to        (recipient tx)
-             :data      (data tx)
-             :nonce     (nonce tx)
-             :gas-price (gas-price tx)
-             :gas-limit (gas-limit tx)
-             :value     (value tx)}]
+    (let [m (decode tx)]
       (if-let [from (sender tx)]
         (assoc m :from from)
         m))))
 
-(defn tx->b [tx]
-  #?(:cljs
-     (.serialize tx))
-  #?(:clj
-     (.getEncoded tx)))
-
 (defn ->hex [tx]
   (-> tx
-      (tx->b)
-      (util/->hex)
-      (util/add0x)))
+      ;(tx->b)
+      (b/->hex)
+      (b/add0x)))
 
 (defn sign [tx priv]
-  #?(:cljs
-     (.sign tx (keys/get-private-key priv)))
-  #?(:clj
-     (.sign tx (.toByteArray (.getPrivKey priv))))
-  tx)
-
-(defn create-and-sign
-  "Convenience function create and sign a tx in one go"
-  [m priv]
-  ;(println "====== " (prn-str m))
-  (-> (create m)
-      (sign priv)))
+  (let [payload (base-fields tx)
+        encoded (rlp/encode payload)
+        signature (der/DER-decode-ECDSA-signature (ecc/sign (b/strip0x priv) encoded))
+        payload (concat payload
+                        [(b/->bytes (b/add0x (:recover signature)))
+                         (b/->bytes (b/add0x (:R signature)))
+                         (b/->bytes (b/add0x (:S signature)))])
+        _ (prn signature)
+        ]
+    (-> payload
+        (rlp/encode)
+        (b/->hex)
+        (b/add0x))))
 
 (defn fn-tx
   ([contract fn-abi args]
@@ -170,7 +162,7 @@
 
 (defn create-contract-tx
   ([bin params]
-    (create-contract-tx bin params {:inputs [] :type "constructor"} []))
+   (create-contract-tx bin params {:inputs [] :type "constructor"} []))
   ([bin params fn-abi args]
    (let [types (map :type (:inputs fn-abi))
          bin (if (empty? types)

@@ -1,6 +1,7 @@
 (ns cloth.filters
   (:require [cloth.chain :as chain]
             [promesa.core :as p]
+            [cloth.bytes :as b]
             [cloth.core :as cloth]
     #?@(:cljs [[cljs.core.async :as async :refer [>! <!]]]
         :clj  [

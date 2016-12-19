@@ -4,6 +4,7 @@
             [cats.core :as m]
             [cloth.chain :as chain]
             [cloth.util :as util]
+            [cloth.bytes :as b]
             [cloth.keys :as keys]))
 
 #?(:cljs (enable-console-print!))
@@ -98,7 +99,7 @@
     (fetch-defaults signer)
     (p/mapcat #(estimate-gas (merge t % {:from (:address signer)})))
     (p/mapcat
-      #(-> (tx/create-and-sign % (keys/get-private-key signer))
+      #(-> (tx/sign % (keys/get-private-key signer))
            ;spytx
            (tx/->hex)
            (chain/send-raw-transaction)))))
@@ -114,7 +115,7 @@
                        :value 0
                        :data (util/encode-fn-sig "forward"
                                                  [:address :uint256 :bytes]
-                                                 [(:to t) (:value t 0) (:data t (util/hex-> ""))]))
+                                                 [(:to t) (:value t 0) (:data t (b/->bytes ""))]))
                      device))
 
 (defn sign-and-send!

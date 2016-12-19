@@ -24,3 +24,5 @@ index.html
 
 *.asc
 .lein-failures
+
+.DS_Store

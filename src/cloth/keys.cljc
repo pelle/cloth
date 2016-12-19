@@ -1,74 +1,59 @@
 (ns cloth.keys
-  (:require #?@(:cljs [ethereumjs-tx])
-            [cloth.util :as util])
-  #?(:clj
-     (:import [org.ethereum.crypto ECKey]
-              [org.ethereum.core Transaction])))
+  (:require
+    [secp256k1.core :as ecc]
+    [cuerdas.core :as c]
+    [cloth.util :as util]
+    [cloth.digests :as d]
+    [cloth.bytes :as b]))
 
-#?(:cljs
-   (def secp256k1 (aget util/eth-util "secp256k1")))
+;#?(:cljs
+;   (extend-type js/Uint8Array
+;     ecc/PrivateKey
+;     (private-key
+;       ([encoded-key _]
+;        (ecc/private-key encoded-key))
+;       ([encoded-key]
+;        (ecc/private-key (b/->hex encoded-key))))
+;     ecc/PublicKey
+;     (public-key
+;       ([encoded-key _]
+;         (ecc/public-key encoded-key))
+;       ([encoded-key]
+;        (ecc/public-key (b/->hex encoded-key))))))
+;
 
-#?(:cljs
-   (defn random-bytes
-     ([] (random-bytes 32))
-     ([length]
-      (util/Buffer. (. js/window.crypto getRandomValues (js/Uint8Array. length))))))
+(defn- encode-pub-key [pub]
+  (ecc/x962-encode pub :compressed false))
 
-#?(:cljs
-   (defn verify-private-key [key]
-     (try
-       ((aget secp256k1 "privateKeyVerify") key)
-       (catch js/TypeError e nil))))
+(defn ->public-key [private-key]
+   (-> private-key
+       (b/strip0x)
+       (ecc/private-key)
+       (ecc/public-key)
+       (ecc/x962-encode :compressed false)
+      ))
 
-(defn create-private-key []
-  #?(:cljs
-     (loop []
-       (let [key (random-bytes)]
-         (if-not (verify-private-key key)
-           (recur)
-           key))))
-  #?(:clj (ECKey.)))
-
-#?(:cljs
-   (defn ->public-key [private-key]
-     ((aget util/eth-util "privateToPublic") private-key)))
-
-(defn ->address [private-key]
-  #?(:cljs (util/hex0x ((aget util/eth-util "pubToAddress") (->public-key private-key))))
-  #?(:clj (util/hex0x (.getAddress private-key))))
-
-(defn priv->b [priv]
-  #?(:cljs (identity priv))
-  #?(:clj (.getPrivKeyBytes priv)))
-
-(defn b->priv [b]
-  #?(:cljs (identity b))
-  #?(:clj
-     (if (instance? ECKey b)
-       b
-       (ECKey/fromPrivate b))))
-
+(defn ->address [kp-or-public-key]
+  (let [public-key (or (:public-key kp-or-public-key)
+                       (if (:private-key kp-or-public-key)
+                         (->public-key (:private-key kp-or-public-key))
+                         kp-or-public-key))]
+    (b/add0x (c/slice (b/->hex (d/sha3 (b/->bytes (c/slice (b/strip0x public-key) 2)))) 24))))
 
 (defn keypair
-  ([b]
-   (let [private-key (b->priv (if (string? b)
-                                (util/hex-> b)
-                                b))]
-     {:private-key (util/hex0x (priv->b private-key))
-      :address     (->address private-key)})))
+  [private-key]
+  (let [public-key (b/add0x (->public-key private-key))]
+    {:private-key (b/add0x private-key)
+     :address     (->address public-key)}))
 
 (defn get-private-key
   "pass a keypair map or a private-key either hex or buffer and returns a private key for signing pupr"
   [kp-or-private-key]
-  (let [b (if (:private-key kp-or-private-key)
-            (util/hex-> (:private-key kp-or-private-key))
-            (if (string? kp-or-private-key)
-              (util/hex-> kp-or-private-key)
-              kp-or-private-key))]
-    (b->priv b)))
+  (:private-key kp-or-private-key kp-or-private-key))
 
 (defn create-keypair
   "Creates a map of hex encoded keypair with
    :private-key and :address keys"
   []
-  (keypair (create-private-key)))
+  (let [ap (ecc/generate-address-pair)]
+    (keypair (:private-key ap))))

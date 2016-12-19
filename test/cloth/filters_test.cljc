@@ -12,7 +12,8 @@
     [clojure.test :refer [is are deftest testing use-fixtures]]
     [clojure.core.async :as async :refer [>! <! <!! go go-loop]]
     [cloth.contracts :as c]])
-    [cloth.util :as util])
+    [cloth.util :as util]
+    [cloth.bytes :as b])
   #?(:cljs (:require-macros
              [cljs.core.async.macros :refer [go go-loop]]
              [cloth.contracts :as c])))
@@ -37,6 +38,7 @@
            (done))))
      :clj
      (let [{:keys [events stop start]} @(filters/new-block-ch)
+           _ @(chain/testrpc-mine!)
            block-hash (<!! events)]
        (stop)
        (is block-hash))))
@@ -61,7 +63,7 @@
            contract (atom nil)
            event-sig (util/encode-event-sig "Issued" [:address :uint32])]
        (async done
-         (-> (core/faucet! 10000000000)
+         (-> (core/faucet! 1000000000000000000)
              (p/then core/when-mined)
              (p/then deploy-simple-token!)
              (p/then (fn [c] (reset! contract c)))
@@ -77,8 +79,8 @@
                                      (is event)
                                      (is (= (:address event) @contract))
                                      (is (= (:tx event)))
-                                     (is (= (:topics event) [event-sig (util/add0x (util/encode-solidity :address recipient))]))
-                                     (is (= (:data event) (util/add0x (util/encode-solidity :uint32 123))))
+                                     (is (= (:topics event) [event-sig (b/add0x (util/encode-solidity :address recipient))]))
+                                     (is (= (:data event) (b/add0x (util/encode-solidity :uint32 123))))
                                      (done)
                                      ))))))
              (p/catch (fn [e]
@@ -86,7 +88,8 @@
                         (prn (.-stack e))
                         (done))))))
      :clj
-     (do @(core/faucet! 10000000000)
+     (let [state @(chain/testrpc-snapshot!)]
+       @(core/faucet! 1000000000000000000)
          (let [contract @(deploy-simple-token!)
                recipient (:address (keys/create-keypair))
                event-sig (util/encode-event-sig "Issued" [:address :uint32])
@@ -99,6 +102,7 @@
            (is event)
            (is (= (:address event) contract))
            (is (= (:tx event)))
-           (is (= (:topics event) [event-sig (util/add0x (util/encode-solidity :address recipient))]))
-           (is (= (:data event) (util/add0x (util/encode-solidity :uint32 123))))
+           (is (= (:topics event) [event-sig (b/add0x (util/encode-solidity :address recipient))]))
+           (is (= (:data event) (b/add0x (util/encode-solidity :uint32 123))))
+           @(chain/testrpc-revert! state)
            ))))

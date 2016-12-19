@@ -76,12 +76,12 @@
      (async done
        (p/then (core/fetch-gas-price)
                (fn [price]
-                 (is (= price {:gas-price 1}))
+                 (is (= price {:gas-price 20000000000}))
                  (done))))
      :clj
      (p/then (core/fetch-gas-price)
              (fn [price]
-               (is (= price {:gas-price 1}))))))
+               (is (= price {:gas-price 20000000000}))))))
 
 (deftest fetch-defaults-test
   (create-new-keypair!)
@@ -89,12 +89,12 @@
      (async done
        (p/then (core/fetch-defaults)
                (fn [defaults]
-                 (is (= defaults {:gas-price 1 :nonce 0}))
+                 (is (= defaults {:gas-price 20000000000 :nonce 0}))
                  (done))))
      :clj
      @(p/then (core/fetch-defaults)
               (fn [defaults]
-                (is (= defaults {:gas-price 1 :nonce 0}))))))
+                (is (= defaults {:gas-price 20000000000 :nonce 0}))))))
 
 (deftest sign-and-send-test
   (create-new-keypair!)
@@ -102,7 +102,7 @@
     #?(:cljs
        (async done
          (p/catch
-           (->> (core/faucet! 10000000000)
+           (->> (core/faucet! 1000000000000000000)
                 (p/mapcat (fn [_] (core/sign-and-send! {:to recipient :value 100000})))
                 (p/mapcat
                   (fn [tx]
@@ -116,7 +116,7 @@
              (is (nil? e))
              (done))))
        :clj
-       (let [_ @(core/faucet! 10000000000)
+       (let [_ @(core/faucet! 1000000000000000000)
              tx @(core/sign-and-send! {:to recipient :value 12340000})]
          (is tx)
          (is (= (:from tx) (:address (core/current-signer))))
@@ -133,7 +133,7 @@
       #?(:cljs
          (async done
            (p/catch
-             (->> (core/faucet! 10000000000)
+             (->> (core/faucet! 1000000000000000000)
                   (p/mapcat (fn [_] (core/sign-and-send! {:to recipient :value 100000})))
                   (p/mapcat
                     (fn [tx]
@@ -147,7 +147,7 @@
                (is (nil? e))
                (done))))
          :clj
-         (let [_ @(core/faucet! 10000000000)
+         (let [_ @(core/faucet! 1000000000000000000)
                tx @(core/sign-and-send! {:to recipient :value 12340000})]
            (is tx)
            (is (= (:from tx) (:address (core/current-signer))))
@@ -164,7 +164,7 @@
       #?(:cljs
          (async done
            (p/catch
-             (->> (core/faucet! 10000000000)
+             (->> (core/faucet! 1000000000000000000)
                   (p/mapcat (fn [] (deploy-proxy!)))
                   (p/mapcat (fn [contract]
                               (reset! core/global-signer {:address  contract
@@ -184,23 +184,25 @@
                   (p/mapcat #(is (= % 12340000)))
                   (p/mapcat
                     (fn [] (chain/get-balance (:address (core/current-signer)))))
-                  (p/mapcat #(is (= % (- 10000000000 12340000))))
+                  (p/mapcat #(is (= % (- 1000000000000000000 12340000))))
                   (p/mapcat done))
              (fn [e]
                (println "Error: " (prn-str e))
                (is (nil? e))
                (done))))
          :clj
-         (let [_ @(core/faucet! 10000000000)
+         (let [state @(chain/testrpc-snapshot!)
+               _ @(core/faucet! 1000000000000000000)
                contract @(deploy-proxy!)
                _ (reset! core/global-signer {:address  contract
                                            :type     :proxy
                                            :device  keypair})
-               _ @(core/faucet! 10000000000)
+               _ @(core/faucet! 1000000000000000000)
                tx @(core/sign-and-send! {:to recipient :value 12340000})]
            (is tx)
            (is (= (:from tx) (:address keypair)))
            (is (= (:to tx) contract))
            (is (= (:value tx) 0))
            (is (= @(chain/get-balance recipient) 12340000))
-           (is (= @(chain/get-balance contract) (- 10000000000 12340000))))))))
+           (is (= @(chain/get-balance contract) (- 1000000000000000000 12340000)))
+           @(chain/testrpc-revert! state))))))

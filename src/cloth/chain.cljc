@@ -3,6 +3,7 @@
             [cloth.net :as net]
             [cuerdas.core :as c]
             [cloth.tx :as tx]
+            [cloth.bytes :as b]
             [cloth.util :as util]
     #?@(:cljs [[cljs-time.coerce :as coerce]])
     #?@(:clj  [[clj-time.coerce :as coerce]])))
@@ -19,53 +20,53 @@
 
 (defn gas-price []
   (-> (ethrpc "eth_gasPrice")
-      (p/then util/hex->uint)))
+      (p/then b/->uint)))
 
 (defn block-number []
   (-> (ethrpc "eth_blockNumber")
-      (p/then util/hex->uint)))
+      (p/then b/->uint)))
 
 (defn get-balance
   ([address] (get-balance address "latest"))
   ([address block-number]
    (-> (ethrpc "eth_getBalance" address block-number)
-       (p/then util/hex->uint))))
+       (p/then b/->uint))))
 
 (defn get-transaction-count
   ([address] (get-transaction-count address "latest"))
   ([address block-number]
    (-> (ethrpc "eth_getTransactionCount" address block-number)
-       (p/then util/hex->uint))))
+       (p/then b/->uint))))
 
 (defn rpc->tx [tx]
   (if tx
     (-> (select-keys tx [:from :to :hash :input])
-        (assoc :value (util/hex->uint (:value tx))
+        (assoc :value (b/->uint (:value tx))
                :block-hash (:blockHash tx)
-               :block-number (and (:blockNumber tx) (util/hex->uint (:blockNumber tx)))
-               :nonce (util/hex->uint (:nonce tx))
-               :gas (util/hex->uint (:gas tx))
-               :gas-price (util/hex->uint (:gasPrice tx))
-               :transaction-index (util/hex->uint (:transactionIndex tx))))))
+               :block-number (and (:blockNumber tx) (b/->uint (:blockNumber tx)))
+               :nonce (b/->uint (:nonce tx))
+               :gas (b/->uint (:gas tx))
+               :gas-price (b/->uint (:gasPrice tx))
+               :transaction-index (b/->uint (:transactionIndex tx))))))
 
 (defn receipt->tx [tx]
   (if tx
     {:hash (:transactionHash tx)
-     :transaction-index (util/hex->uint (:transactionIndex tx))
+     :transaction-index (b/->uint (:transactionIndex tx))
      :block-hash (:blockHash tx)
-     :block-number (util/hex->uint (:blockNumber tx))
+     :block-number (b/->uint (:blockNumber tx))
      :contract-address (:contractAddress tx)
-     :cumulative-gas-used (util/hex->uint (:cumulativeGasUsed tx))
-     :gas-used (util/hex->uint (:gasUsed tx))
+     :cumulative-gas-used (b/->uint (:cumulativeGasUsed tx))
+     :gas-used (b/->uint (:gasUsed tx))
      :logs (:logs tx)}))
 
 (defn rpc->event [e]
   (-> (select-keys e [:address :type :topics :data])
       (assoc :block-hash (:blockHash e)
              :tx (:transactionHash e)
-             :log-index (util/hex->uint (:logIndex e))
-             :block-number (util/hex->uint (:blockNumber e))
-             :transaction-index (util/hex->uint (:transactionIndex e)))))
+             :log-index (b/->uint (:logIndex e))
+             :block-number (b/->uint (:blockNumber e))
+             :transaction-index (b/->uint (:transactionIndex e)))))
 
 (defn rpc->block [block]
   (if block
@@ -78,13 +79,13 @@
                :sha3-uncles       (:sha3uncles block)
                :extra-data        (:extraData block)
                :transactions      (mapv rpc->tx (:transactions block))
-               :number            (util/hex->uint (:number block))
-               :difficulty        (util/hex->uint (:difficulty block))
-               :gas-used          (util/hex->uint (:gasUsed block))
-               :nonce             (util/hex->uint (:nonce block))
-               :gas-limit         (util/hex->uint (:gasLimit block))
-               :total-difficulty  (util/hex->uint (:totalDifficulty block))
-               :timestamp         (coerce/from-long (* 1000 (long (util/hex->uint (:timestamp block)))))))))
+               :number            (b/->uint (:number block))
+               :difficulty        (b/->uint (:difficulty block))
+               :gas-used          (b/->uint (:gasUsed block))
+               :nonce             (b/->uint (:nonce block))
+               :gas-limit         (b/->uint (:gasLimit block))
+               :total-difficulty  (b/->uint (:totalDifficulty block))
+               :timestamp         (coerce/from-long (* 1000 (long (b/->uint (:timestamp block)))))))))
 
 (defn get-block-by-hash
   ([hash]
@@ -124,7 +125,7 @@
   ([address index]
     (get-storage-at address index "latest"))
   ([address index block-number]
-   (ethrpc "eth_getStorageAt" address (util/add0x (util/int->hex index)) block-number)))
+   (ethrpc "eth_getStorageAt" address (b/add0x (b/->hex index)) block-number)))
 
 (defn get-code
   [address block-number]
@@ -137,7 +138,7 @@
 (defn estimate-gas
   ([params]
    (-> (ethrpc "eth_estimateGas" (select-keys params [:from :to :data :value]))
-       (p/then util/hex->uint))))
+       (p/then b/->uint))))
 
 (defn call
   ([object] (call object "latest"))
@@ -193,3 +194,30 @@
 (defn uninstall-filter [id]
   (ethrpc "eth_uninstallFilter" id))
 
+(defn testrpc-snapshot!
+  "Snapshot the state of the blockchain at the current block. Takes no parameters. Returns the integer id of the snapshot created.
+
+  TESTRPC only"
+  []
+  (ethrpc "evm_snapshot"))
+
+(defn testrpc-revert!
+  "Revert the state of the blockchain to a previous snapshot. Takes a single parameter, which is the snapshot id to revert to. If no snapshot id is passed it will revert to the latest snapshot. Returns true.
+
+  TESTRPC only"
+  [id]
+  (ethrpc "evm_revert" id))
+
+(defn testrpc-mine!
+  "Force a block to be mined. Takes no parameters. Mines a block independent of whether or not mining is started or stopped.
+
+  TESTRPC only"
+  []
+  (ethrpc "evm_mine"))
+
+(defn testrpc-increase-time!
+  "Jump forward in time. Takes one parameter, which is the amount of time to increase in seconds. Returns the total time adjustment, in seconds.
+
+  TESTRPC only"
+  [seconds]
+  (ethrpc "evm_increaseTime" seconds))

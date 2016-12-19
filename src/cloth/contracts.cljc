@@ -3,6 +3,7 @@
     [cloth.core :as cloth]
     [cloth.tx :as tx]
     [cloth.util :as util]
+    [cloth.bytes :as b]
     [cloth.chain :as chain]
     [cloth.filters :as filters]
     [promesa.core :as p]

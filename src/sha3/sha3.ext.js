@@ -1,0 +1,10 @@
+function sha3_512(msg);
+function sha3_384(msg);
+function sha3_256(msg);
+function sha3_224(msg);
+function keccak_512(msg);
+function keccak_384(msg);
+function keccak_256(msg);
+function keccak_224(msg);
+function shake_128(msg,outputBits);
+function shake_256(msg,outputBits);

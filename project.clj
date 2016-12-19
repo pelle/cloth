@@ -7,7 +7,7 @@
                  [funcool/cats "2.0.0"]
                  [funcool/promesa "1.6.0"]
                  [funcool/httpurr "0.6.2"]
-                 [aleph "0.4.1" :scope "provided"]
+                 [aleph/core "0.5.0"]
                  [funcool/cuerdas "2.0.1"]
                  [clj-time "0.12.2"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]

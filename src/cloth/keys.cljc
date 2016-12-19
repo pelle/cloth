@@ -6,18 +6,28 @@
     [cloth.digests :as d]
     [cloth.bytes :as b]))
 
-#?(:cljs
-   (defn random-bytes
-     ([] (random-bytes 32))
-     ([length]
-      (. js/window.crypto getRandomValues (js/Uint8Array. length)))))
+;#?(:cljs
+;   (extend-type js/Uint8Array
+;     ecc/PrivateKey
+;     (private-key
+;       ([encoded-key _]
+;        (ecc/private-key encoded-key))
+;       ([encoded-key]
+;        (ecc/private-key (b/->hex encoded-key))))
+;     ecc/PublicKey
+;     (public-key
+;       ([encoded-key _]
+;         (ecc/public-key encoded-key))
+;       ([encoded-key]
+;        (ecc/public-key (b/->hex encoded-key))))))
+;
 
 (defn- encode-pub-key [pub]
   (ecc/x962-encode pub :compressed false))
 
 (defn ->public-key [private-key]
    (-> private-key
-       (b/->hex)
+       (b/strip0x)
        (ecc/private-key)
        (ecc/public-key)
        (ecc/x962-encode :compressed false)
@@ -32,7 +42,7 @@
 
 (defn keypair
   [private-key]
-  (let [public-key (b/add0x (->public-key (b/strip0x private-key)))]
+  (let [public-key (b/add0x (->public-key private-key))]
     {:private-key (b/add0x private-key)
      :address     (->address public-key)}))
 

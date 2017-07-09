@@ -85,7 +85,7 @@
      "
      [contract file]
      (let [compiled (compile-solidity file)
-           contract-key (keyword (c/capitalize (c/camel (name contract))))
+           contract-key (keyword (str file ":" (c/capitalize (c/camel (name contract)))))
            binary (get-in compiled [:contracts contract-key :bin])
            abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
            functions (filter #(= (:type %) "function") abi)

@@ -158,7 +158,7 @@
 (deftest sign-with-signer-proxy-test
   (let [keypair (keys/create-keypair)]
     (reset! core/global-signer keypair)
-    (c/defcontract proxy "test/cloth/Proxy.sol")
+    (c/defcontract proxy "test/cloth/Proxy.sol" :ignore-compiler-warnings)
 
     (let [recipient (:address (keys/create-keypair))]
       #?(:cljs

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.1;
+pragma solidity ^0.4.16;
 contract SimpleToken {
   uint32 public circulation;
   address public issuer;
@@ -9,7 +9,7 @@ contract SimpleToken {
   bytes32 public ipfs;
 
   event Issued(address indexed recipient, uint32 amount);
-  event Message(address indexed shouter, string message);
+  event Message(address indexed shouter, string _message);
   event Transferred(address indexed sender, address indexed recipient, uint32 amount);
 
   function SimpleToken() {
@@ -21,17 +21,17 @@ contract SimpleToken {
   modifier authorizedCustomer(address customer) { if (authorized[customer] != 0 ) _ ; }
   modifier unAuthorizedCustomer(address customer) { if (authorized[customer] == 0 ) _ ; }
 
-  function customer(address customer) constant
+  function customer(address _customer) constant
     returns(uint authorizedTime, uint32 balance) {
-    return (authorized[customer], balances[customer]);
+    return (authorized[_customer], balances[_customer]);
   }
 
-  function authorize(address customer) public
+  function authorize(address _customer) public
     onlyIssuer
-    unAuthorizedCustomer(customer)
+    unAuthorizedCustomer(_customer)
     returns(bool success) {
-        authorized[customer] = block.timestamp;
-        customers.push(customer);
+        authorized[_customer] = block.timestamp;
+        customers.push(_customer);
         return true;
   }
 
@@ -45,9 +45,9 @@ contract SimpleToken {
   }
 
   function setMessage(string _message)
-    public returns(string message) {
+    public returns(string) {
         message = _message;
-        Message(msg.sender,message);
+        Message(msg.sender,_message);
         return message;
   }
 

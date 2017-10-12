@@ -16,11 +16,17 @@
 
 
 #?(:clj
-   (defn compile-solidity [file]
-     (let [result (shell/sh "solc" "--combined-json" "abi,bin" file)]
-       (if (not (c/blank? (:err result)))
-         (throw (ex-info (:err result) {:solidity file :exit (:exit result)}))
-         (json/parse-string (:out result) true)))))
+   (defn compile-solidity
+     ([file ignore-warnings?]
+      (let [result    (shell/sh "solc" "--combined-json" "abi,bin" file)
+            failed?   (if ignore-warnings?
+                        (not (zero? (:exit result)))
+                        (not (c/blank? (:err result))))]
+        (if failed?
+          (throw (ex-info (:err result) {:solidity file :exit (:exit result)}))
+          (json/parse-string (:out result) true))))
+     ([file]
+      (compile-solidity file false))))
 
 #?(:clj
    (defn abi->args [f]
@@ -69,7 +75,28 @@
             ]
            (str fncall const returns)))
 
-;; (<function name>!)
+#?(:clj
+   (defn compile-contract [contract file ignore-warnings?]
+     "Compile a Solidity file and return a map of functions, constructor, events, and the name for a deploy function.
+Tries to be compatible with older versions of solc that didn't include Solidity file name in the output of \"solc --combined-json=abi,bin\"."
+     (let [{:keys [contracts]} (compile-solidity file ignore-warnings?)
+           solidity-name                    (c/capitalize (c/camel (name contract)))               ;; convert, e.g. "simple-token" -> "SimpleToken"
+           {json-abi :abi binary :bin}      (or (contracts (keyword solidity-name))                ;; old version of solc
+                                                (contracts (keyword (str file ":" solidity-name))) ;; newer version of solc
+                                                (throw (ex-info (str "Contract \"" solidity-name "\" not found in file \"" file "\".")
+                                                                {:clojure-name  contract
+                                                                 :solidity-name solidity-name})))
+           abi                              (json/parse-string json-abi true)
+           functions                        (filter #(= (:type %) "function") abi)
+           constructor                      (first (filter #(= (:type %) "constructor") abi))
+           events                           (filter #(= (:type %) "event") abi)
+           deploy-name                      (symbol (str "deploy-" (c/kebab (name solidity-name)) "!"))]
+       {:functions   functions
+        :constructor constructor
+        :events      events
+        :binary      binary
+        :deploy-name deploy-name})))
+
 #?(:clj
    (defmacro defcontract
      "Compiles solidity and creates a set of functions in the current namespace:
@@ -82,16 +109,13 @@
 
      (add-device!! \"0x0sdsfafs...\" {})
 
+     Parameters:
+       contract           - the name of the contract converted to Clojure-style skewer-case (e.g.  \"SimpleToken\" becomes simple-token)
+       file               - the Solidity file pathname (a string)
+       ignore-warnings?   - optional, compiler warnings are OK but a compiler error will raise an exception
      "
-     [contract file]
-     (let [compiled (compile-solidity file)
-           contract-key (keyword (c/capitalize (c/camel (name contract))))
-           binary (get-in compiled [:contracts contract-key :bin])
-           abi (json/parse-string (get-in compiled [:contracts contract-key :abi]) true)
-           functions (filter #(= (:type %) "function") abi)
-           constructor (first (filter #(= (:type %) "constructor") abi))
-           events (filter #(= (:type %) "event") abi)
-           deploy-name (symbol (str "deploy-" (c/kebab (name contract)) "!"))]
+     [contract file & [ignore-warnings?]]
+     (let [{:keys [functions constructor events binary deploy-name]} (compile-contract contract file ignore-warnings?)]
        `(do
           (defn ~deploy-name [ & args# ]
             (deploy-contract ~binary ~constructor args#))

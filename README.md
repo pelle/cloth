@@ -128,6 +128,10 @@ The `cloth.contracts` namespace allows you to compile solidity code and create c
 
 (defcontract simple-token "test/cloth/SimpleToken.sol")
 
+;; The contract name argument must be the skewer-case version of the Solidity contract name.
+;; In the example above, the use of `simple-token` means there's a contract named `SimpleToken` in SimpleToken.sol file.
+;; Any solc compiler warnings are treated as an error; an optional `ignore-warnings?` argument to `defcontract` over-rides the default behavior.
+
 ;; For simplicity sake the rest of the examples use Clojure @ syntax for dereferencing Promises
 
 ;; Deploy the solidity code to the blockchain
@@ -198,6 +202,8 @@ testrpc -b 1
 ### Clojure tests
 
 Run `lein test` or `lein test-refresh`.
+
+Tests assume gasPrice is 1, so use `testrpc -g 1 -b 1`
 
 ### Clojurescript tests
 

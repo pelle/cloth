@@ -1,4 +1,5 @@
-pragma solidity ^0.4.1;
+pragma solidity ^0.4.16;
+
 contract Constructed {
     string public status;
 
